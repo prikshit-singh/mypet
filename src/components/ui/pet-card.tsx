@@ -26,7 +26,7 @@ export function PetCard({ pet, className }: PetCardProps) {
   };
 
   return (
-    <div className={cn('pet-card h-full flex flex-col border rounded-lg overflow-hidden bg-[card]', className)}>
+    <div className={cn('pet-card h-full flex flex-col border rounded-lg overflow-hidden bg-card', className)}>
       <div className="relative overflow-hidden h-48">
         <img 
           src={pet.images[0]} 
@@ -85,7 +85,7 @@ export function PetCard({ pet, className }: PetCardProps) {
             Free Adoption
           </div>
         ) : pet.purpose === 'sell' ? (
-          <div className="font-bold text-lg mb-3 text-primary ">
+          <div className="font-bold text-lg mb-3 text-primary">
             ${pet.price?.toFixed(2)}
           </div>
         ) : (
