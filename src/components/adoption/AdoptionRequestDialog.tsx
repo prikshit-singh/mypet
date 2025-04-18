@@ -17,8 +17,7 @@ import { toast } from '@/hooks/use-toast';
 import { adoptionService } from '@/services/adoptionService';
 import { Pet } from '@/types/pet';
 import { authService } from '@/services/authService';
-import { useNavigate } from 'react-router-dom';
-
+import { useRouter } from 'next/navigation';
 interface AdoptionRequestDialogProps {
   pet: Pet;
   onRequestSent?: () => void;
@@ -28,7 +27,7 @@ const AdoptionRequestDialog: React.FC<AdoptionRequestDialogProps> = ({ pet, onRe
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
+   const router = useRouter();
 
   const handleSubmit = async () => {
     if (!message.trim()) {
@@ -46,7 +45,7 @@ const AdoptionRequestDialog: React.FC<AdoptionRequestDialogProps> = ({ pet, onRe
         description: "You need to be logged in to submit an adoption request",
         variant: "destructive",
       });
-      navigate('/login');
+      router.push('/login');
       return;
     }
 

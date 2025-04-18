@@ -1,4 +1,4 @@
-
+'use client';
 import { useCallback, useEffect } from 'react';
 
 export function useScrollAnimation() {
