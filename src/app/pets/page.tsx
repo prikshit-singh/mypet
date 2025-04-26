@@ -445,6 +445,7 @@ const page: React.FC = () => {
     </>
   );
   
+  console.log('filteredPets',loading,filteredPets)
   return (
     <Layout>
       <div className="container py-8">
@@ -624,7 +625,7 @@ const page: React.FC = () => {
                   ))}
                 </div>
                 
-                <ScrollAnimation type="fade-in" delay={300}>
+                {/* <ScrollAnimation type="fade-in" delay={300}>
                   <div className="mt-8">
                     <Pagination>
                       <PaginationContent>
@@ -646,7 +647,7 @@ const page: React.FC = () => {
                       </PaginationContent>
                     </Pagination>
                   </div>
-                </ScrollAnimation>
+                </ScrollAnimation> */}
               </>
             ) : (
               <ScrollAnimation type="fade-in">

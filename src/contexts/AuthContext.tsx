@@ -1,12 +1,16 @@
 'use client'
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '@/types/user';
-import { authService } from '@/services/authService';
+import { User, UserCredentials } from '@/types/user';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { loginService, signupService, getCurrentUserService } from '@/services/authApi';
+import { toast } from '@/hooks/use-toast';
+import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<User>;
+  login: (email: string, password: string) => void;
   logout: () => void;
   isLoggedIn: boolean;
 }
@@ -15,25 +19,57 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+const router = useRouter()
+
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: getCurrentUserService,
+    enabled: !!Cookies.get('token'), 
+    retry: false,
+  });
+
+
 
   useEffect(() => {
-    // Check if user is already logged in
-    const storedUser = authService.getCurrentUser();
-    if (storedUser) {
-      setUser(storedUser);
+    if (data?.user) {
+      setUser(data.user);
     }
-    setLoading(false);
-  }, []);
+    if (isError) {
+      Cookies.remove('token');
+      setUser(null);
+    }
+  }, [data, isError]);
+
+  const loginMutation = useMutation<User, Error, UserCredentials>(
+    {
+      mutationFn: loginService,
+      onSuccess: async(user: any) => {
+        const token = user.token;
+        Cookies.set('token', token); // store token
+        await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        toast({
+          title: 'Login successful',
+          description: `Welcome back, ${user.user.name}!`,
+        });
+        router.push('/')
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Login failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+      },
+    }
+  );
 
   const login = async (email: string, password: string) => {
-    const loggedInUser = await authService.login({ email, password });
-    setUser(loggedInUser);
-    return loggedInUser;
+    loginMutation.mutate({ email, password });
   };
 
   const logout = () => {
-    authService.logout();
+    // authService.logout();
     setUser(null);
   };
 
@@ -41,7 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     <AuthContext.Provider
       value={{
         user,
-        loading,
+        loading: isLoading || loginMutation.isPending,
         login,
         logout,
         isLoggedIn: !!user,

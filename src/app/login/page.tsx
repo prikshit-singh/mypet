@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import Link from 'next/link';
 import {  useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,8 +42,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import Layout from '@/components/layout/Layout';
 import { toast } from '@/hooks/use-toast';
-import { authService } from '@/services/authService';
-import { UserCredentials, RegisterData } from '@/types/user';
+import { User, UserCredentials,RegisterData } from '@/types/user';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { loginService, signupService, getCurrentUserService } from '@/services/authApi';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Login form schema
@@ -78,32 +79,59 @@ const LoginPage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [tabValue,setTabValue] = useState('login')
+  const { login,user,loading } = useAuth();
+
   const router = useRouter()
-  const { login } = useAuth();
+  useEffect(()=>{
+    if(!loading && user){
+      router.push('/')
+    }
+  },[loading,user])
+    // Login form
+    const loginForm = useForm<LoginFormValues>({
+      resolver: zodResolver(loginSchema),
+      defaultValues: {
+        email: "",
+        password: "",
+        remember: false,
+      },
+    });
   
-  // Login form
-  const loginForm = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      remember: false,
-    },
-  });
+    // Register form
+    const registerForm = useForm<RegisterFormValues>({
+      resolver: zodResolver(registerSchema),
+      defaultValues: {
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        role: "individual",
+        terms: false,
+      },
+    });
 
-  // Register form
-  const registerForm = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      role: "individual",
-      terms: false,
-    },
-  });
-
+  const RegisterMutation = useMutation<User, Error, RegisterData>(
+    {
+      mutationFn: signupService,
+      onSuccess: async(user: any) => {
+        const token = user.token;
+        toast({
+          title: 'Registration successful',
+        });
+        setTabValue('login')
+        registerForm.reset();
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Registration failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+      },
+    }
+  );
+  
   // Handle login form submission
   const onLoginSubmit = async (values: LoginFormValues) => {
     try {
@@ -119,17 +147,17 @@ const LoginPage: React.FC = () => {
       await login(values.email, values.password);
       
       // Show success toast
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
+      // toast({
+      //   title: "Login successful",
+      //   description: "Welcome back!",
+      // });
       
       // Check if user needs onboarding
-      if (authService.needsOnboarding()) {
-        router.push("/onboarding");
-      } else {
-        router.push("/dashboard");
-      }
+      // if (authService.needsOnboarding()) {
+      //   router.push("/onboarding");
+      // } else {
+      //   router.push("/dashboard");
+      // }
     } catch (error) {
       toast({
         title: "Login failed",
@@ -155,20 +183,8 @@ const LoginPage: React.FC = () => {
         role: values.role
       };
       
-      const user = await authService.register(registerData);
-      
-      // Show success toast
-      toast({
-        title: "Registration successful",
-        description: `Welcome to PawConnect, ${user.name}!`,
-      });
-      
-      // If user is a shelter or pet shop, redirect to onboarding
-      if (user.role === 'shelter' || user.role === 'pet_shop') {
-        router.push("/onboarding");
-      } else {
-        router.push("/dashboard");
-      }
+      RegisterMutation.mutate(registerData);
+    
     } catch (error) {
       toast({
         title: "Registration failed",
@@ -210,14 +226,15 @@ const LoginPage: React.FC = () => {
     loginForm.setValue("password", "password123");
   };
 
+
   return (
     <Layout>
       <div className="container py-8">
         <div className="max-w-md mx-auto py-8">
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs value={tabValue} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login" id="login-tab">Login</TabsTrigger>
-              <TabsTrigger value="register" id="register-tab">Register</TabsTrigger>
+              <TabsTrigger value="login" onClick={()=>setTabValue('login')} id="login-tab">Login</TabsTrigger>
+              <TabsTrigger value="register" onClick={()=>setTabValue('register')} id="register-tab">Register</TabsTrigger>
             </TabsList>
             
             {/* Login Form */}
