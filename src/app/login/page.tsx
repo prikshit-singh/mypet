@@ -115,7 +115,6 @@ const LoginPage: React.FC = () => {
     {
       mutationFn: signupService,
       onSuccess: async(user: any) => {
-        const token = user.token;
         toast({
           title: 'Registration successful',
         });
@@ -138,10 +137,6 @@ const LoginPage: React.FC = () => {
       setIsLoggingIn(true);
       
       // Call login service with properly typed values
-      const credentials: UserCredentials = {
-        email: values.email,
-        password: values.password
-      };
       
       // Use context login instead of direct service call
       await login(values.email, values.password);
@@ -503,7 +498,7 @@ const LoginPage: React.FC = () => {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="individual">Individual Pet Owner</SelectItem>
+                                <SelectItem value="individual">Individual</SelectItem>
                                 <SelectItem value="pet_shop">Pet Shop</SelectItem>
                                 <SelectItem value="shelter">Animal Shelter</SelectItem>
                               </SelectContent>

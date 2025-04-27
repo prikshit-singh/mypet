@@ -20,15 +20,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const queryClient = useQueryClient();
-const router = useRouter()
+  const router = useRouter()
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['currentUser'],
     queryFn: getCurrentUserService,
-    enabled: !!Cookies.get('token'), 
+    enabled: !!Cookies.get('token'),
     retry: false,
   });
-
 
 
   useEffect(() => {
@@ -44,9 +43,12 @@ const router = useRouter()
   const loginMutation = useMutation<User, Error, UserCredentials>(
     {
       mutationFn: loginService,
-      onSuccess: async(user: any) => {
+      onSuccess: async (user: any) => {
+
+        console.log('success', user)
+
         const token = user.token;
-        Cookies.set('token', token); // store token
+        Cookies.set('token', token);
         await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         toast({
           title: 'Login successful',
@@ -55,9 +57,11 @@ const router = useRouter()
         router.push('/')
       },
       onError: (err: any) => {
+        const message = err?.response?.data?.error || err?.message || 'Login failed';
+        console.log(123,err,err?.response)
         toast({
           title: 'Login failed',
-          description: err.message,
+          description: message,
           variant: 'destructive',
         });
       },
@@ -70,6 +74,7 @@ const router = useRouter()
 
   const logout = () => {
     // authService.logout();
+    Cookies.remove('token');
     setUser(null);
   };
 

@@ -141,7 +141,7 @@ const DashboardPage: React.FC = () => {
                     </Badge>
                   )}
                   
-                  <Link href="/profile/edit" className="w-full mt-4">
+                  <Link href="/edit-profile" className="w-full mt-4">
                     <Button variant="outline" className="w-full">
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Profile

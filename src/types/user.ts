@@ -48,3 +48,15 @@ export interface OnboardingData {
   emergencyContact?: string;
 }
 
+// Add new interface for address
+export interface Address {
+  id?: string;
+  street: string;
+  city: string;
+  state: string;
+  zip?: string;
+  postalCode?:string
+  isDefault: boolean;
+  createdAt?: string;
+}
+

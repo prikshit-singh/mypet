@@ -1,6 +1,6 @@
 'use client'
-import React, { useState } from 'react';
-import {  useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,23 +17,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PawPrint, DollarSign, Heart, Info } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { authService } from '@/services/authService';
-
+import { MapPin, PawPrint, DollarSign, Heart, Info, Save } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import Cookies from 'js-cookie';
+import { Address } from '@/types/user';
+import { Card } from '@/components/ui/card';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { createAddress, getAddresses, updateAddressById } from '@/services/authApi';
+import { createPet } from '@/services/petServices';
+import { Pet } from '@/types/pet';
 type PetPurpose = 'sell' | 'adopt' | 'breed';
+export type PetType = 
+  | "Dog"
+  | "Cat"
+  | "Bird"
+  | "Fish"
+  | "Small Mammal"
+  | "Reptile"
+  | "Other";
+
 
 const AddPetPage: React.FC = () => {
-    const router = useRouter()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<PetPurpose>('sell');
   const [petData, setPetData] = useState({
     name: '',
-    species: '',
+    type: '',
     breed: '',
     age: '',
-    gender: '',
+    gender: 'Male',
     price: '',
     description: '',
     healthInfo: '',
@@ -46,9 +59,93 @@ const AddPetPage: React.FC = () => {
   });
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [addressType, setAddressType] = useState<'existing' | 'new'>('existing');
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [newAddress, setNewAddress] = useState({
+    street: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    isDefault: false
+  });
+  const queryClient = useQueryClient();
+
+  const { data: addressList, isLoading, isError, refetch } = useQuery({
+    queryKey: ['addressList'],
+    queryFn: getAddresses,
+    enabled: !!Cookies.get('token'),
+    retry: false,
+  });
+
+  const CreateAddressMutation = useMutation<any, Error, Address>(
+    {
+      mutationFn: createAddress,
+      onSuccess: async (address: any) => {
+
+        console.log(address)
+        await queryClient.invalidateQueries({ queryKey: ['addressList'] });
+        toast({
+          title: 'Address saved successfully',
+        });
+
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Address Request failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+      },
+    }
+  );
+
+  const CreatePetMutation = useMutation<any, Error, any>(
+    {
+      mutationFn: createPet,
+      onSuccess: async (pet: any) => {
+
+        console.log(pet)
+        // await queryClient.invalidateQueries({ queryKey: ['addressList'] });
+        toast({
+          title: 'Pet saved successfully',
+        });
+        setIsSubmitting(false);
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Pet Request failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
+
+      },
+    }
+  );
+
+  useEffect(() => {
+    if (addressList?.success && addressList?.data.length > 0) {
+      const selectedId = addressList?.data.find((addr: any) => addr.isDefault)?._id
+      setSelectedAddressId(selectedId)
+    }
+  }, [addressList])
   // Get current user
-  const currentUser = authService.getCurrentUser();
+  // const currentUser = getCurrentUserService();
+
+  useEffect(() => {
+    const token = Cookies.get('token');
+    console.log(token)
+    if (!token) {
+
+      toast({
+        title: "You are not logged in.",
+        description: "Please login first.",
+        variant: "destructive",
+      });
+
+      router.replace('/login'); // Redirect to login if no token
+    }
+  }, [router]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value as PetPurpose);
@@ -87,18 +184,39 @@ const AddPetPage: React.FC = () => {
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
     }));
-    
+
     // Revoke the URL to avoid memory leaks
     URL.revokeObjectURL(previewUrls[index]);
     setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
+
+
+  const handleAddressTypeChange = (value: 'existing' | 'new') => {
+    setAddressType(value);
+  };
+
+  const handleNewAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewAddress(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveAddress = (event: any) => {
+    event.stopPropagation()
+    console.log(newAddress)
+    CreateAddressMutation.mutate({ ...newAddress });
+    // toast({
+    //   title: "Address Saved",
+    //   description: "Your address has been saved successfully",
+    // });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
+    console.log({...petData,purpose:activeTab,address:selectedAddressId},)
     // Validate form
-    if (!petData.name || !petData.species || !petData.breed) {
+    if (!petData.name || !petData.type || !petData.breed) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
@@ -108,15 +226,42 @@ const AddPetPage: React.FC = () => {
       return;
     }
 
+    const formData = new FormData();
+
+// Append simple fields
+formData.append('name', petData.name);
+formData.append('type', petData.type as PetType);
+formData.append('purpose', activeTab);
+formData.append('address', selectedAddressId);
+formData.append('breed', petData.breed);
+formData.append('age', petData.age.toString());
+formData.append('gender', petData.gender as 'Male' | 'Female');
+formData.append('price', petData.price.toString());
+formData.append('description', petData.description);
+formData.append('healthInfo', petData.healthInfo);
+formData.append('vaccinated', JSON.stringify(petData.vaccinated));
+formData.append('neutered', JSON.stringify(petData.neutered));
+formData.append('microchipped', JSON.stringify(petData.microchipped));
+formData.append('breedingExperience', petData.breedingExperience);
+formData.append('careAdvice', petData.careAdvice);
+
+// Append images (multiple files)
+petData.images.forEach((image) => {
+  console.log(image)
+  formData.append('images', image); 
+});
+
+    CreatePetMutation.mutate(formData)
+
     // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Pet Added Successfully",
-        description: `Your pet ${petData.name} has been added for ${activeTab === 'sell' ? 'sale' : activeTab === 'adopt' ? 'adoption' : 'breeding'}.`,
-      });
-      setIsSubmitting(false);
-      router.push('/pets');
-    }, 1500);
+    // setTimeout(() => {
+    //   toast({
+    //     title: "Pet Added Successfully",
+    //     description: `Your pet ${petData.name} has been added for ${activeTab === 'sell' ? 'sale' : activeTab === 'adopt' ? 'adoption' : 'breeding'}.`,
+    //   });
+    //   setIsSubmitting(false);
+    //   router.push('/pets');
+    // }, 1500);
   };
 
   return (
@@ -168,19 +313,19 @@ const AddPetPage: React.FC = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="species">Species <span className="text-red-500">*</span></Label>
-                  <Select name="species" onValueChange={(value) => handleSelectChange('species', value)}>
+                  <Select name="species" onValueChange={(value) => handleSelectChange('type', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select species" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="dog">Dog</SelectItem>
-                      <SelectItem value="cat">Cat</SelectItem>
-                      <SelectItem value="bird">Bird</SelectItem>
-                      <SelectItem value="rabbit">Rabbit</SelectItem>
-                      <SelectItem value="hamster">Hamster</SelectItem>
-                      <SelectItem value="fish">Fish</SelectItem>
-                      <SelectItem value="reptile">Reptile</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="Dog">Dog</SelectItem>
+                      <SelectItem value="Cat">Cat</SelectItem>
+                      <SelectItem value="Bird">Bird</SelectItem>
+                      <SelectItem value="Rabbit">Rabbit</SelectItem>
+                      <SelectItem value="Hamster">Hamster</SelectItem>
+                      <SelectItem value="Fish">Fish</SelectItem>
+                      <SelectItem value="Reptile">Reptile</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -202,6 +347,7 @@ const AddPetPage: React.FC = () => {
                   <Input
                     id="age"
                     name="age"
+                    type='number'
                     value={petData.age}
                     onChange={handleInputChange}
                     placeholder="e.g., 2 years, 6 months"
@@ -210,13 +356,13 @@ const AddPetPage: React.FC = () => {
 
                 <div className="space-y-2">
                   <Label>Gender</Label>
-                  <RadioGroup defaultValue="male" onValueChange={(value) => handleSelectChange('gender', value)}>
+                  <RadioGroup defaultValue={petData.gender} onValueChange={(value) => handleSelectChange('gender', value)}>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="male" id="male" />
+                      <RadioGroupItem value="Male" id="male" />
                       <Label htmlFor="male">Male</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="female" id="female" />
+                      <RadioGroupItem value="Female" id="female" />
                       <Label htmlFor="female">Female</Label>
                     </div>
                   </RadioGroup>
@@ -301,6 +447,124 @@ const AddPetPage: React.FC = () => {
             </div>
 
             <Separator />
+
+            {/* Address Information */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-4">
+                <MapPin className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold">Address Information</h2>
+              </div>
+
+              <RadioGroup
+                value={addressType}
+                onValueChange={(value: 'existing' | 'new') => handleAddressTypeChange(value)}
+                className="mb-4"
+              >
+                <div className="flex items-center space-x-2 mb-2">
+                  <RadioGroupItem value="existing" id="existing" />
+                  <Label htmlFor="existing">Use existing address</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="new" id="new" />
+                  <Label htmlFor="new">Add new address</Label>
+                </div>
+              </RadioGroup>
+
+              {addressType === 'existing' && (
+                <div className="grid grid-cols-1 gap-4">
+                  {addressList?.success && addressList?.data.length > 0 && addressList?.data.map((address: any) => (
+                    <Card
+                      key={address._id}
+                      className={`p-4 cursor-pointer ${selectedAddressId === address._id ? 'ring-2 ring-primary' : ''
+                        }`}
+                      onClick={() => setSelectedAddressId(address._id)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">{address.street}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {address.city}, {address.state} {address.postalCode}
+                          </p>
+                        </div>
+                        {address.isDefault && (
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                            Default
+                          </span>
+                        )}
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {addressType === 'new' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="street">Street Address <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="street"
+                      name="street"
+                      value={newAddress.street}
+                      onChange={handleNewAddressChange}
+                      placeholder="Enter your street address"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="city"
+                      name="city"
+                      value={newAddress.city}
+                      onChange={handleNewAddressChange}
+                      placeholder="Enter city"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="state"
+                      name="state"
+                      value={newAddress.state}
+                      onChange={handleNewAddressChange}
+                      placeholder="Enter state"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="postalCode">ZIP Code <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="postalCode"
+                      name="postalCode"
+                      value={newAddress.postalCode}
+                      onChange={handleNewAddressChange}
+                      placeholder="Enter ZIP code"
+                      required
+                    />
+                  </div>
+                  <div className="md:col-span-2 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Switch id="make-default" checked={newAddress.isDefault} onCheckedChange={(checked) => {
+                        setNewAddress((prev) => ({
+                          ...prev,
+                          isDefault: checked,
+                        }));
+                      }} />
+                      <Label htmlFor="make-default">Make this my default address</Label>
+                    </div>
+                    <Button
+                      onClick={handleSaveAddress}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Save className="h-4 w-4" />
+                      Save Address
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Purpose-specific information */}
             {activeTab === 'breed' && (

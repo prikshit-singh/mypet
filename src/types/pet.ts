@@ -1,6 +1,6 @@
 
 export interface Pet {
-  id: string;
+  id?: string;
   name: string;
   type: 'Dog' | 'Cat' | 'Bird' | 'Fish' | 'Small Mammal' | 'Reptile' | 'Other';
   breed: string;
@@ -8,20 +8,25 @@ export interface Pet {
   gender: 'Male' | 'Female';
   description: string;
   purpose: 'adopt' | 'sell' | 'breed';
+  breedingExperience?:string;
+  careAdvice?:string;
+  healthInfo?:string;
+  microchipped?:boolean;
+  neutered?:boolean;
   price?: number;
-  city: string;
   vaccinated: boolean;
-  images: string[];
-  createdAt: string;
-  owner: {
+  images: File[];
+  createdAt?: string;
+  address?:string;
+  owner?: {
     id: string;
     name: string;
     avatar: string;
     role: 'individual' | 'pet_shop' | 'shelter';
     rating: number;
     joinedAt: string;
-  };
-  ownerVerified: boolean;
+  }|string;
+  ownerVerified?: boolean;
   adoptionRequests?: AdoptionRequest[];
 }
 
@@ -48,3 +53,4 @@ export interface PetFilter {
   minPrice?: number | undefined;
   maxPrice?: number | undefined;
 }
+
