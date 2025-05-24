@@ -48,6 +48,8 @@ import { mockPets } from '@/data/mock-data';
 import { Pet } from '@/types/pet';
 import { toast } from '@/hooks/use-toast';
 import RatingModal from '@/components/ratings/RatingModal';
+import { useQueryClient,useQuery } from '@tanstack/react-query';
+import { getSinglePets } from '@/services/petServices';
 
 const PetDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -55,9 +57,19 @@ const PetDetailsPage: React.FC = () => {
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<'adopt' | 'buy' | 'breed'>('adopt');
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+
+
+  const { data: pet, isLoading, isError } = useQuery({
+    queryKey: ['getSinglePet',id],
+    queryFn: ({ queryKey }) => getSinglePets(queryKey[1]),
+    refetchOnMount:true,
+    retry: true,
+  });
   
-  const pet = mockPets.find(p => p.id === id);
   
+  console.log(pet)
   if (!pet) {
     return (
       <Layout>
@@ -80,7 +92,7 @@ const PetDetailsPage: React.FC = () => {
   const handleSubmitRequest = () => {
     setIsContactDialogOpen(false);
     
-    router.push(`/chat/${pet.id}`);
+    router.push(`/chat/${pet._id}`);
   };
 
   const handleAddToFavorites = () => {
@@ -113,7 +125,7 @@ const PetDetailsPage: React.FC = () => {
           className="flex-1"
           onClick={() => handleAction('buy')}
         >
-          {`Buy Now - $${pet.price?.toFixed(2)}`}
+          {`Buy Now - $${parseFloat(pet.price)}`}
         </Button>
       );
     } else {
@@ -201,7 +213,7 @@ const PetDetailsPage: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-2 text-sm">
                       <span className="text-muted-foreground">Location</span>
-                      <span>{pet.city}</span>
+                      <span>{pet.address.city}</span>
                     </div>
                     <div className="grid grid-cols-2 text-sm">
                       <span className="text-muted-foreground">Listed On</span>
@@ -214,7 +226,7 @@ const PetDetailsPage: React.FC = () => {
               <TabsContent value="owner" className="p-4 border rounded-lg mt-4">
                 <div className="flex items-center gap-4 mb-6">
                   <img 
-                    src={pet.owner.avatar} 
+                    src={pet.owner.avatar ?pet.owner.avatar :'/maleAvatar.jpg' } 
                     alt={pet.owner.name} 
                     className="w-16 h-16 rounded-full object-cover"
                   />
@@ -243,7 +255,7 @@ const PetDetailsPage: React.FC = () => {
                         onClick={() => setIsRatingModalOpen(true)}
                       >
                         <Star className="h-4 w-4 text-amber-500 mr-1 fill-amber-500" />
-                        {pet.owner.rating.toFixed(1)}
+                        {/* {pet.owner.rating.toFixed(1)} */}
                       </button>
                       <span>Member since {new Date(pet.owner.joinedAt).toLocaleDateString()}</span>
                     </div>
@@ -259,7 +271,7 @@ const PetDetailsPage: React.FC = () => {
                         'sell': 'buy',
                         'breed': 'breed'
                       } as const;
-                      handleAction(actionMap[pet.purpose]);
+                      handleAction(actionMap[pet.purpose as 'breed'|'sell'|'adopt']);
                     }}
                   >
                     <MessageCircle className="mr-2 h-4 w-4" />
@@ -311,7 +323,7 @@ const PetDetailsPage: React.FC = () => {
                       By making a purchase inquiry, you understand:
                     </p>
                     <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                      <li>The listed price is {pet.price ? `$${pet.price.toFixed(2)}` : 'to be discussed with the seller'}</li>
+                      <li>The listed price is {pet.price ? `$${parseFloat(pet.price)}` : 'to be discussed with the seller'}</li>
                       <li>You may need to provide proof of ability to care for the pet</li>
                       <li>The seller may have additional requirements before finalizing the sale</li>
                       <li>We recommend meeting the pet in person before completing the purchase</li>
@@ -428,7 +440,7 @@ const PetDetailsPage: React.FC = () => {
 
               {pet.purpose === 'sell' && (
                 <div className="mb-6">
-                  <h2 className="font-bold text-2xl text-primary">${pet.price?.toFixed(2)}</h2>
+                  <h2 className="font-bold text-2xl text-primary">${pet.price}</h2>
                 </div>
               )}
 
@@ -436,7 +448,7 @@ const PetDetailsPage: React.FC = () => {
                 <h3 className="text-sm font-medium text-muted-foreground mb-2">Owner</h3>
                 <div className="flex items-center gap-2">
                   <img 
-                    src={pet.owner.avatar} 
+                    src={pet.owner.avatar ?pet.owner.avatar :'/maleAvatar.jpg'} 
                     alt={pet.owner.name} 
                     className="w-8 h-8 rounded-full object-cover"
                   />
@@ -452,7 +464,7 @@ const PetDetailsPage: React.FC = () => {
                       onClick={() => setIsRatingModalOpen(true)}
                     >
                       <Star className="h-3 w-3 text-amber-500 mr-1 fill-amber-500" />
-                      <span>{pet.owner.rating.toFixed(1)}</span>
+                      {/* <span>{pet.owner.rating.toFixed(1)}</span> */}
                     </button>
                   </div>
                 </div>

@@ -57,7 +57,7 @@ export function PetCard({ pet, className }: PetCardProps) {
       <div className="p-4 flex flex-col flex-grow">
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-semibold text-lg line-clamp-1">
-            <Link href={`/pets/${pet.id}`} className="hover:text-primary">
+            <Link href={`/pets/${pet._id}`} className="hover:text-primary">
               {pet.name}
             </Link>
           </h3>
@@ -69,7 +69,7 @@ export function PetCard({ pet, className }: PetCardProps) {
         </div>
         <div className="flex items-center text-sm text-muted-foreground mb-2">
           <MapPin className="h-3.5 w-3.5 mr-1" />
-          <span>{pet.city}</span>
+          <span>{typeof pet.address === 'object' && pet.address !== null ? pet.address.city : 'No city'}</span>
           <span className="mx-2">•</span>
           <Calendar className="h-3.5 w-3.5 mr-1" />
           <span>{pet.age} {pet.age === 1 ? 'year' : 'years'}</span>
@@ -100,7 +100,7 @@ export function PetCard({ pet, className }: PetCardProps) {
         
         <div className="flex gap-2 mt-auto pt-4">
           <Button asChild className="w-full">
-            <Link href={`/pets/${pet.id}`}>View Details</Link>
+            <Link href={`/pets/${pet._id}`}>View Details</Link>
           </Button>
         </div>
       </div>

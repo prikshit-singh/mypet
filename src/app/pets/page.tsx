@@ -51,6 +51,10 @@ import { featuredPets } from '@/data/mock-data';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Pet } from '@/types/pet';
 import { useSearchParams } from 'next/navigation';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
+import { getAllPets } from '@/services/petServices';
+import Cookies from 'js-cookie';
 type SortOption = 'newest' | 'price-low' | 'price-high' | 'name';
 
 interface PetFilter {
@@ -96,25 +100,41 @@ const page: React.FC = () => {
   const breedOptions = ['Labrador Retriever', 'German Shepherd', 'Persian', 'Siamese', 'Parakeet', 'Cockatiel', 'Netherland Dwarf', 'Syrian Hamster', 'Betta Fish', 'Bearded Dragon'];
   const purposeOptions = ['adopt', 'sell', 'breed'];
   const genderOptions = ['male', 'female'];
+  const queryClient = useQueryClient();
+  const { data: petList, isLoading, isError } = useQuery({
+    queryKey: ['petList'],
+    queryFn: getAllPets,
+    refetchOnMount:true,
+    retry: true,
+  });
+
+  console.log('petlist',petList,isLoading, isError)
+  
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     setPets(petList);
+  //     setLoading(false);
+  //     console.log("Loaded pets:", featuredPets.length);
+  //   }, 500);
+    
+  //   return () => clearTimeout(timer);
+  // }, []);
   
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPets(featuredPets);
-      setLoading(false);
-      console.log("Loaded pets:", featuredPets.length);
-    }, 500);
+    console.log('result',petList)
+
+    if (isLoading) return;
+    let result:any = [];
+
+    if(Array.isArray(petList)){
+       result = [...petList];
+
+    }
     
-    return () => clearTimeout(timer);
-  }, []);
-  
-  useEffect(() => {
-    if (loading) return;
-    
-    let result = [...pets];
-    
+    console.log('result',result)
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
-      result = result.filter(pet => 
+      result = result.filter((pet:any) => 
         pet.name.toLowerCase().includes(searchTerm) || 
         pet.breed.toLowerCase().includes(searchTerm) ||
         pet.description.toLowerCase().includes(searchTerm)
@@ -122,28 +142,28 @@ const page: React.FC = () => {
     }
     
     if (filters.species.length > 0) {
-      result = result.filter(pet => filters.species.includes(pet.type));
+      result = result.filter((pet:any) => filters.species.includes(pet.type));
     }
     
     if (filters.breeds.length > 0) {
-      result = result.filter(pet => filters.breeds.includes(pet.breed));
+      result = result.filter((pet:any) => filters.breeds.includes(pet.breed));
     }
     
     if (filters.purpose.length > 0) {
-      result = result.filter(pet => filters.purpose.includes(pet.purpose));
+      result = result.filter((pet:any) => filters.purpose.includes(pet.purpose));
     }
     
     if (filters.gender.length > 0) {
-      result = result.filter(pet => 
+      result = result.filter((pet:any) => 
         filters.gender.includes(pet.gender.toLowerCase())
       );
     }
     
-    result = result.filter(pet => 
+    result = result.filter((pet:any) => 
       pet.age >= filters.ageRange[0] && pet.age <= filters.ageRange[1]
     );
     
-    result = result.filter(pet => {
+    result = result.filter((pet:any) => {
       if (pet.purpose === 'adopt') return true;
       return (!pet.price || (
         pet.price >= filters.priceRange[0] && 
@@ -152,15 +172,15 @@ const page: React.FC = () => {
     });
     
     if (filters.vaccinated !== undefined) {
-      result = result.filter(pet => pet.vaccinated === filters.vaccinated);
+      result = result.filter((pet:any) => pet.vaccinated === filters.vaccinated);
     }
     
     switch (filters.sortBy) {
       case 'newest':
-        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        result.sort((a:any, b:any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
       case 'price-low':
-        result.sort((a, b) => {
+        result.sort((a:any, b:any) => {
           if (a.purpose === 'adopt' && b.purpose === 'adopt') return 0;
           if (a.purpose === 'adopt') return -1;
           if (b.purpose === 'adopt') return 1;
@@ -168,7 +188,7 @@ const page: React.FC = () => {
         });
         break;
       case 'price-high':
-        result.sort((a, b) => {
+        result.sort((a:any, b:any) => {
           if (a.purpose === 'adopt' && b.purpose === 'adopt') return 0;
           if (a.purpose === 'adopt') return 1;
           if (b.purpose === 'adopt') return -1;
@@ -176,12 +196,12 @@ const page: React.FC = () => {
         });
         break;
       case 'name':
-        result.sort((a, b) => a.name.localeCompare(b.name));
+        result.sort((a:any, b:any) => a.name.localeCompare(b.name));
         break;
     }
     
     setFilteredPets(result);
-  }, [filters, pets, loading]);
+  }, [filters, petList]);
   
   const handleCheckboxFilter = (key: 'species' | 'breeds' | 'purpose' | 'gender', value: string, checked: boolean) => {
     setFilters(prev => {
@@ -597,7 +617,7 @@ const page: React.FC = () => {
           )}
           
           <div className="md:col-span-3">
-            {loading ? (
+            {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="border rounded-lg p-4 space-y-3">
@@ -616,7 +636,7 @@ const page: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredPets.map((pet, index) => (
                     <ScrollAnimation 
-                      key={pet.id} 
+                      key={pet?._id} 
                       type="fade-in-up" 
                       delay={(index % 3 * 100 + 100) as 100 | 200 | 300 | 400 | 500}
                     >

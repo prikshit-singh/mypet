@@ -50,7 +50,7 @@ export interface OnboardingData {
 
 // Add new interface for address
 export interface Address {
-  id?: string;
+  _id?: string;
   street: string;
   city: string;
   state: string;

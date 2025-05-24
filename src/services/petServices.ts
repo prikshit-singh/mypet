@@ -25,3 +25,31 @@ export const createPet = async(payload:any)=>{
   
     return res.json();
   }
+
+  export const getAllPets = async()=>{
+  console.log('get all pets')
+    const res = await fetch(`${API_BASE}/pet`, {
+      method: 'GET',
+    });
+  
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Pet fetch failed');
+    }
+  const petsData =await res.json()
+    return petsData?.pets;
+  }
+
+  export const getSinglePets = async(id:string)=>{
+    console.log('getSinglePets')
+      const res = await fetch(`${API_BASE}/pet/${id}`, {
+        method: 'GET',
+      });
+    
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Pet fetch failed');
+      }
+    const petsData =await res.json()
+      return petsData?.pet;
+    }

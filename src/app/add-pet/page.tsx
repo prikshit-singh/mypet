@@ -105,7 +105,7 @@ const AddPetPage: React.FC = () => {
       onSuccess: async (pet: any) => {
 
         console.log(pet)
-        // await queryClient.invalidateQueries({ queryKey: ['addressList'] });
+        await queryClient.invalidateQueries({ queryKey: ['petList'] });
         toast({
           title: 'Pet saved successfully',
         });
@@ -129,8 +129,7 @@ const AddPetPage: React.FC = () => {
       setSelectedAddressId(selectedId)
     }
   }, [addressList])
-  // Get current user
-  // const currentUser = getCurrentUserService();
+  
 
   useEffect(() => {
     const token = Cookies.get('token');
