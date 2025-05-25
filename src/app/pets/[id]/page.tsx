@@ -48,8 +48,8 @@ import { mockPets } from '@/data/mock-data';
 import { Pet } from '@/types/pet';
 import { toast } from '@/hooks/use-toast';
 import RatingModal from '@/components/ratings/RatingModal';
-import { useQueryClient,useQuery } from '@tanstack/react-query';
-import { getSinglePets } from '@/services/petServices';
+import { useQueryClient,useQuery ,useMutation} from '@tanstack/react-query';
+import { getSinglePets,toggolFavouritePet,ratePetOwner } from '@/services/petServices';
 
 const PetDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -59,6 +59,31 @@ const PetDetailsPage: React.FC = () => {
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
 
   const queryClient = useQueryClient();
+
+
+  const ToggolFavourite = useMutation<any, Error, any>(
+    {
+      mutationFn: toggolFavouritePet,
+      onSuccess: async (pet: any) => {
+        await queryClient.invalidateQueries({ queryKey: ['getSinglePet'] });
+        await queryClient.invalidateQueries({ queryKey: ['petList'] });
+        
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Pet Request failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+
+      },
+    }
+  );
+
+
+
+
+
 
 
   const { data: pet, isLoading, isError } = useQuery({
@@ -95,17 +120,25 @@ const PetDetailsPage: React.FC = () => {
     router.push(`/chat/${pet._id}`);
   };
 
-  const handleAddToFavorites = () => {
-    toast({
-      title: "Added to Favorites",
-      description: `${pet.name} has been added to your favorites!`,
-    });
+  const handleAddToFavorites = (id:string) => {
+    ToggolFavourite.mutate(id)
+   
   };
 
   const handleShare = () => {
-    toast({
-      title: "Link Copied",
-      description: "Pet link copied to clipboard!",
+    const currentUrl = window.location.href;
+
+    navigator.clipboard.writeText(currentUrl).then(() => {
+      toast({
+        title: "Link Copied",
+        description: "Pet link copied to clipboard!",
+      });
+    }).catch(() => {
+      toast({
+        title: "Failed to Copy",
+        description: "Unable to copy the link. Please try manually.",
+        variant: "destructive",
+      });
     });
   };
 
@@ -255,7 +288,7 @@ const PetDetailsPage: React.FC = () => {
                         onClick={() => setIsRatingModalOpen(true)}
                       >
                         <Star className="h-4 w-4 text-amber-500 mr-1 fill-amber-500" />
-                        {/* {pet.owner.rating.toFixed(1)} */}
+                        {pet.owner.averageRating.toFixed(1)}
                       </button>
                       <span>Member since {new Date(pet.owner.joinedAt).toLocaleDateString()}</span>
                     </div>
@@ -378,9 +411,11 @@ const PetDetailsPage: React.FC = () => {
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      onClick={handleAddToFavorites}
+                      onClick={()=>handleAddToFavorites(pet._id)}
                     >
-                      <Heart className="h-4 w-4" />
+
+
+                      {pet.isFavourite ?<Heart className="h-4 w-4 fill-red-500 text-white  bg-red" /> : <Heart className="h-4 w-4 " /> }
                     </Button>
                   </div>
                 </div>
@@ -429,12 +464,12 @@ const PetDetailsPage: React.FC = () => {
                       <Star 
                         key={star} 
                         className="h-4 w-4" 
-                        fill={star <= Math.round(4.5) ? "currentColor" : "transparent"}
+                        fill={star <= Math.round(pet.owner.averageRating) ? "currentColor" : "transparent"}
                       />
                     ))}
                   </div>
-                  <span className="text-sm font-medium">4.5</span>
-                  <span className="text-xs text-muted-foreground">(12 ratings)</span>
+                  <span className="text-sm font-medium">{pet.owner.averageRating.toFixed(1)}</span>
+                  <span className="text-xs text-muted-foreground">({pet.owner.totalRatings.toFixed(1)} ratings)</span>
                 </Button>
               </div>
 
@@ -464,7 +499,7 @@ const PetDetailsPage: React.FC = () => {
                       onClick={() => setIsRatingModalOpen(true)}
                     >
                       <Star className="h-3 w-3 text-amber-500 mr-1 fill-amber-500" />
-                      {/* <span>{pet.owner.rating.toFixed(1)}</span> */}
+                      <span>{pet.owner.averageRating.toFixed(1)}</span>
                     </button>
                   </div>
                 </div>
@@ -532,7 +567,7 @@ const PetDetailsPage: React.FC = () => {
         onClose={() => setIsRatingModalOpen(false)}
         targetName={pet.owner.name}
         targetType="owner"
-        targetId={pet.owner.id}
+        targetId={pet.owner._id}
       />
     </Layout>
   );

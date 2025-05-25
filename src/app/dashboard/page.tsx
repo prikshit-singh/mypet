@@ -44,10 +44,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from '@/hooks/use-toast';
 import Layout from '@/components/layout/Layout';
 import { mockPets, mockUsers } from '@/data/mock-data';
+import { useAuth } from '@/contexts/AuthContext';
+import { getUserPets,getUserFavouritePets ,toggolFavouritePet ,deleteSinglePets , } from '@/services/petServices';
+import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
 
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 // Mock data for dashboard
-const currentUser = mockUsers[0]; // Using the first user as the current user
-const userPets = mockPets.filter(pet => pet.owner.id === currentUser.id);
+// const currentUser = mockUsers[0]; // Using the first user as the current user
+// const userPets = mockPets.filter(pet => pet.owner._id === currentUser.id);
 const favoritePets = mockPets.slice(1, 4); // Just using some pets as favorites for demo
 
 // Mock adoption/purchase requests
@@ -94,13 +99,50 @@ const mockRequests = [
 ];
 
 const DashboardPage: React.FC = () => {
+  const { user:currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('my-pets');
+  const queryClient = useQueryClient();
+  const { data:userPets, isLoading, isError, refetch } = useQuery({
+    queryKey: ['getUserPets'],
+    queryFn: getUserPets,
+    enabled: !!Cookies.get('token'),
+    retry: false,
+  });
+
+  const { data:favoritePets } = useQuery({
+    queryKey: ['getUserFavouritePets'],
+    queryFn: getUserFavouritePets,
+    enabled: !!Cookies.get('token'),
+    retry: false,
+  });
+
+     const deletePetMutation = useMutation<any, Error, string>(
+          {
+            mutationFn: deleteSinglePets,
+            onSuccess: async(deleteRes: any) => {
+    
+                console.log(deleteRes)
+                await queryClient.invalidateQueries({ queryKey: ['getUserPets'] });
+                toast({
+                  title: "Pet Deleted",
+                  description: "Pet has been removed from your listings.",
+                });
+           
+            },
+            onError: (err: any) => {
+              toast({
+                title: 'Pet Deleted Request failed',
+                description: err.message,
+                variant: 'destructive',
+              });
+            },
+          }
+        );
 
   const handleDeletePet = (petId: string) => {
-    toast({
-      title: "Pet Deleted",
-      description: "Pet has been removed from your listings.",
-    });
+
+    deletePetMutation.mutate(petId)
+   
   };
 
   const handleRequestAction = (requestId: string, action: 'approve' | 'reject') => {
@@ -117,6 +159,30 @@ const DashboardPage: React.FC = () => {
     });
   };
 
+    const ToggolFavourite = useMutation<any, Error, any>(
+          {
+            mutationFn: toggolFavouritePet,
+            onSuccess: async (pet: any) => {
+              await queryClient.invalidateQueries({ queryKey: ['getUserFavouritePets'] });
+              // toast({
+              //   title: 'Pet saved successfully',
+              // });
+            },
+            onError: (err: any) => {
+              toast({
+                title: 'Pet Request failed',
+                description: err.message,
+                variant: 'destructive',
+              });
+      
+            },
+          }
+        );
+  
+        const handleToggol = (id:string)=>{
+          ToggolFavourite.mutate(id)
+        }
+
   return (
     <Layout>
       <div className="container py-8">
@@ -128,14 +194,14 @@ const DashboardPage: React.FC = () => {
               <CardContent className="p-4">
                 <div className="flex flex-col items-center text-center">
                   <Avatar className="h-20 w-20 mb-4">
-                    <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
-                    <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
+                    <AvatarFallback>{currentUser?.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <h2 className="font-semibold text-xl">{currentUser.name}</h2>
-                  <p className="text-sm text-muted-foreground mb-1">@{currentUser.name.toLowerCase().replace(' ', '')}</p>
-                  <Badge className="capitalize mt-1">{currentUser.role}</Badge>
+                  <h2 className="font-semibold text-xl">{currentUser?.name}</h2>
+                  <p className="text-sm text-muted-foreground mb-1">@{currentUser?.name.toLowerCase().replace(' ', '')}</p>
+                  <Badge className="capitalize mt-1">{currentUser?.role}</Badge>
                   
-                  {currentUser.isVerified && (
+                  {currentUser?.isVerified && (
                     <Badge variant="outline" className="border-green-500 text-green-600 mt-2">
                       Verified Account
                     </Badge>
@@ -226,10 +292,10 @@ const DashboardPage: React.FC = () => {
                   </Link>
                 </div>
                 
-                {userPets.length > 0 ? (
+                {userPets && userPets.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {userPets.map(pet => (
-                      <Card key={pet.id} className="overflow-hidden">
+                    {userPets.map((pet:any) => (
+                      <Card key={pet._id} className="overflow-hidden">
                         <div className="aspect-video relative">
                           <img 
                             src={pet.images[0]} 
@@ -245,14 +311,14 @@ const DashboardPage: React.FC = () => {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem asChild>
-                                  <Link href={`/pets/${pet.id}`}>View Listing</Link>
+                                  <Link href={`/pets/${pet._id}`}>View Listing</Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
-                                  <Link href={`/edit-pet/${pet.id}`}>Edit</Link>
+                                  <Link href={`/edit-pet/${pet._id}`}>Edit</Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   className="text-destructive focus:text-destructive"
-                                  onClick={() => handleDeletePet(pet.id)}
+                                  onClick={() => handleDeletePet(pet._id)}
                                 >
                                   Delete
                                 </DropdownMenuItem>
@@ -458,14 +524,14 @@ const DashboardPage: React.FC = () => {
               <div>
                 <h1 className="text-2xl font-bold mb-6">Favorite Pets</h1>
                 
-                {favoritePets.length > 0 ? (
+                {favoritePets && favoritePets.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {favoritePets.map(pet => (
-                      <Card key={pet.id} className="overflow-hidden">
+                    {favoritePets.map((pet:any) => (
+                      <Card key={pet?.pet._id} className="overflow-hidden">
                         <div className="aspect-video relative">
                           <img 
-                            src={pet.images[0]} 
-                            alt={pet.name} 
+                            src={pet?.pet.images[0]} 
+                            alt={pet?.pet.name} 
                             className="w-full h-full object-cover"
                           />
                           <Button 
@@ -473,9 +539,11 @@ const DashboardPage: React.FC = () => {
                             size="icon" 
                             className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 text-foreground hover:bg-white backdrop-blur"
                             onClick={() => {
+
+                              handleToggol(pet.pet._id)
                               toast({
                                 title: "Removed from Favorites",
-                                description: `${pet.name} has been removed from your favorites.`,
+                                description: `${pet?.pet.name} has been removed from your favorites.`,
                               });
                             }}
                           >
@@ -484,38 +552,38 @@ const DashboardPage: React.FC = () => {
                         </div>
                         <CardContent className="p-4">
                           <div className="flex justify-between items-start mb-2">
-                            <h3 className="font-semibold text-lg">{pet.name}</h3>
-                            {pet.purpose === 'adopt' && (
+                            <h3 className="font-semibold text-lg">{pet?.pet.name}</h3>
+                            {pet?.pet.purpose === 'adopt' && (
                               <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
                                 For Adoption
                               </Badge>
                             )}
-                            {pet.purpose === 'sell' && (
+                            {pet?.pet.purpose === 'sell' && (
                               <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
                                 For Sale
                               </Badge>
                             )}
-                            {pet.purpose === 'breed' && (
+                            {pet?.pet.purpose === 'breed' && (
                               <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100">
                                 For Breeding
                               </Badge>
                             )}
                           </div>
                           <div className="text-sm text-muted-foreground mb-4">
-                            {pet.breed} · {pet.age} {pet.age === 1 ? 'year' : 'years'} · {pet.gender}
+                            {pet?.pet.breed} · {pet?.pet.age} {pet?.pet.age === 1 ? 'year' : 'years'} · {pet?.pet.gender}
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-muted-foreground">
-                              {pet.city}
+                              {pet?.pet.city}
                             </span>
-                            {pet.purpose === 'sell' && pet.price && (
+                            {pet?.pet.purpose === 'sell' && pet?.pet.price && (
                               <span className="font-semibold text-primary">
-                                ${pet.price.toFixed(2)}
+                                ${pet?.pet.price.toFixed(2)}
                               </span>
                             )}
                           </div>
                           <Button className="w-full mt-4" asChild>
-                            <Link href={`/pets/${pet.id}`}>View Details</Link>
+                            <Link href={`/pets/${pet?.pet._id}`}>View Details</Link>
                           </Button>
                         </CardContent>
                       </Card>
@@ -619,27 +687,27 @@ const DashboardPage: React.FC = () => {
                       <div className="grid gap-4">
                         <div className="grid grid-cols-1 md:grid-cols-[150px,1fr] gap-2 items-center">
                           <label className="text-sm font-medium">Name</label>
-                          <Input placeholder="Your name" defaultValue={currentUser.name} />
+                          <Input placeholder="Your name" defaultValue={currentUser?.name} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-[150px,1fr] gap-2 items-center">
                           <label className="text-sm font-medium">Email</label>
-                          <Input placeholder="Your email" defaultValue={currentUser.email} />
+                          <Input placeholder="Your email" defaultValue={currentUser?.email} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-[150px,1fr] gap-2 items-start">
                           <label className="text-sm font-medium">Bio</label>
                           <textarea 
                             className="min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                             placeholder="Write a short bio..."
-                            defaultValue={currentUser.bio}
+                            defaultValue={currentUser?.bio}
                           ></textarea>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-[150px,1fr] gap-2 items-center">
                           <label className="text-sm font-medium">Phone</label>
-                          <Input placeholder="Your phone number" defaultValue={currentUser.phone} />
+                          <Input placeholder="Your phone number" defaultValue={currentUser?.phone} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-[150px,1fr] gap-2 items-center">
                           <label className="text-sm font-medium">City</label>
-                          <Input placeholder="Your city" defaultValue={currentUser.city} />
+                          <Input placeholder="Your city" defaultValue={currentUser?.city} />
                         </div>
                       </div>
                     </CardContent>

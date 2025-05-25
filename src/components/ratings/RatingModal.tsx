@@ -12,7 +12,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from '@/hooks/use-toast';
-
+import { ratePetOwner } from '@/services/petServices';
+import { useQueryClient,useQuery ,useMutation} from '@tanstack/react-query';
 interface RatingModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -31,6 +32,25 @@ const RatingModal: React.FC<RatingModalProps> = ({
   const [rating, setRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
   const [comment, setComment] = useState<string>('');
+  const queryClient = useQueryClient();
+
+  
+  const RatePetOwner = useMutation<any, Error, any>(
+    {
+      mutationFn: ratePetOwner,
+      onSuccess: async (pet: any) => {
+        await queryClient.invalidateQueries({ queryKey: ['getSinglePet'] });
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Pet Request failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+
+      },
+    }
+  );
 
   const handleRatingSubmit = () => {
     if (rating === 0) {
@@ -50,6 +70,8 @@ const RatingModal: React.FC<RatingModalProps> = ({
       comment,
       timestamp: new Date()
     });
+
+    RatePetOwner.mutate({ownerId:targetId,rating,comment})
     
     toast({
       title: "Rating submitted",

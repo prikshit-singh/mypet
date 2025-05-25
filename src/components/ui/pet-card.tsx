@@ -6,13 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Pet } from '@/types/pet';
-
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
+import { getAllPets ,toggolFavouritePet} from '@/services/petServices';
 interface PetCardProps {
   pet: Pet;
   className?: string;
+  isFavourite:boolean
 }
 
-export function PetCard({ pet, className }: PetCardProps) {
+export function PetCard({ pet, className ,isFavourite}: PetCardProps) {
+    const queryClient = useQueryClient();
   const purposeColors = {
     adopt: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100',
     sell: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100',
@@ -24,6 +28,30 @@ export function PetCard({ pet, className }: PetCardProps) {
     sell: 'For Sale',
     breed: 'For Breeding',
   };
+
+  const ToggolFavourite = useMutation<any, Error, any>(
+        {
+          mutationFn: toggolFavouritePet,
+          onSuccess: async (pet: any) => {
+            await queryClient.invalidateQueries({ queryKey: ['petList'] });
+            // toast({
+            //   title: 'Pet saved successfully',
+            // });
+          },
+          onError: (err: any) => {
+            toast({
+              title: 'Pet Request failed',
+              description: err.message,
+              variant: 'destructive',
+            });
+    
+          },
+        }
+      );
+
+      const handleToggol = (id:string)=>{
+        ToggolFavourite.mutate(id)
+      }
 
   return (
     <div className={cn('pet-card h-full flex flex-col border rounded-lg overflow-hidden bg-card', className)}>
@@ -38,8 +66,10 @@ export function PetCard({ pet, className }: PetCardProps) {
             variant="secondary" 
             size="icon" 
             className="h-8 w-8 rounded-full bg-white/80 text-foreground hover:bg-white backdrop-blur"
+            onClick={()=>handleToggol(pet._id)}
           >
-            <Heart className="h-4 w-4" />
+            {isFavourite ?<Heart className="h-4 w-4 fill-red-500 text-white  bg-red" /> : <Heart className="h-4 w-4 " /> }
+            
             <span className="sr-only">Add to favorites</span>
           </Button>
         </div>

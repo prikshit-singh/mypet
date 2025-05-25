@@ -13,38 +13,38 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ScrollAnimation } from '@/components/ui/scroll-animation';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger
 } from '@/components/ui/accordion';
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious
 } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Drawer, 
-  DrawerClose, 
-  DrawerContent, 
-  DrawerDescription, 
-  DrawerFooter, 
-  DrawerHeader, 
-  DrawerTitle, 
-  DrawerTrigger 
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger
 } from '@/components/ui/drawer';
 import { Search, Filter, X } from 'lucide-react';
 import { featuredPets } from '@/data/mock-data';
@@ -53,7 +53,7 @@ import { Pet } from '@/types/pet';
 import { useSearchParams } from 'next/navigation';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { getAllPets } from '@/services/petServices';
+import { getAllPets, toggolFavouritePet } from '@/services/petServices';
 import Cookies from 'js-cookie';
 type SortOption = 'newest' | 'price-low' | 'price-high' | 'name';
 
@@ -71,7 +71,7 @@ interface PetFilter {
 }
 
 const page: React.FC = () => {
- 
+
   const isMobile = useIsMobile();
   const [pets, setPets] = useState<Pet[]>([]);
   const [filteredPets, setFilteredPets] = useState<Pet[]>([]);
@@ -80,9 +80,9 @@ const page: React.FC = () => {
   const searchParams = useSearchParams();
   const searchFromUrl = searchParams.get('search') || '';
   const initialPurpose = searchParams.get('purpose') ? [searchParams.get('purpose') as string] : [];
-  
+  const [searchInput, setSearchInput] = useState(searchFromUrl);
 
-  
+
   const [filters, setFilters] = useState<PetFilter>({
     search: searchFromUrl,
     species: [],
@@ -95,7 +95,7 @@ const page: React.FC = () => {
     neutered: undefined,
     sortBy: 'newest'
   });
-  
+
   const speciesOptions = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Hamster', 'Fish', 'Reptile', 'Other'];
   const breedOptions = ['Labrador Retriever', 'German Shepherd', 'Persian', 'Siamese', 'Parakeet', 'Cockatiel', 'Netherland Dwarf', 'Syrian Hamster', 'Betta Fish', 'Bearded Dragon'];
   const purposeOptions = ['adopt', 'sell', 'breed'];
@@ -104,83 +104,85 @@ const page: React.FC = () => {
   const { data: petList, isLoading, isError } = useQuery({
     queryKey: ['petList'],
     queryFn: getAllPets,
-    refetchOnMount:true,
+    refetchOnMount: true,
     retry: true,
   });
-
-  console.log('petlist',petList,isLoading, isError)
-  
-  // useEffect(() => {
-  //   const timer = setTimeout(() => {
-  //     setPets(petList);
-  //     setLoading(false);
-  //     console.log("Loaded pets:", featuredPets.length);
-  //   }, 500);
-    
-  //   return () => clearTimeout(timer);
-  // }, []);
-  
+  console.log(123)
   useEffect(() => {
-    console.log('result',petList)
+    const timeout = setTimeout(() => {
+      setFilters((prev) => ({
+        ...prev,
+        search: searchInput,
+      }));
+    }, 200); // debounce delay, adjust as needed
+
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
+
+
+  useEffect(() => {
+    console.log('result', petList)
 
     if (isLoading) return;
-    let result:any = [];
+    let result: any = [];
 
-    if(Array.isArray(petList)){
-       result = [...petList];
-
+    if (Array.isArray(petList?.pets)) {
+      result = [...petList?.pets];
     }
-    
-    console.log('result',result)
+
+    console.log('result', result)
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
-      result = result.filter((pet:any) => 
-        pet.name.toLowerCase().includes(searchTerm) || 
+      result = result.filter((pet: any) =>
+        pet.name.toLowerCase().includes(searchTerm) ||
         pet.breed.toLowerCase().includes(searchTerm) ||
+        pet.type.toLowerCase().includes(searchTerm) ||
         pet.description.toLowerCase().includes(searchTerm)
       );
+      console.log(123, searchTerm, result)
+
     }
-    
+
     if (filters.species.length > 0) {
-      result = result.filter((pet:any) => filters.species.includes(pet.type));
+      result = result.filter((pet: any) => filters.species.includes(pet.type));
     }
-    
+
     if (filters.breeds.length > 0) {
-      result = result.filter((pet:any) => filters.breeds.includes(pet.breed));
+      result = result.filter((pet: any) => filters.breeds.includes(pet.breed));
     }
-    
+
     if (filters.purpose.length > 0) {
-      result = result.filter((pet:any) => filters.purpose.includes(pet.purpose));
+      result = result.filter((pet: any) => filters.purpose.includes(pet.purpose));
     }
-    
+
     if (filters.gender.length > 0) {
-      result = result.filter((pet:any) => 
+      result = result.filter((pet: any) =>
         filters.gender.includes(pet.gender.toLowerCase())
       );
     }
-    
-    result = result.filter((pet:any) => 
+
+    result = result.filter((pet: any) =>
       pet.age >= filters.ageRange[0] && pet.age <= filters.ageRange[1]
     );
-    
-    result = result.filter((pet:any) => {
+
+    result = result.filter((pet: any) => {
       if (pet.purpose === 'adopt') return true;
       return (!pet.price || (
-        pet.price >= filters.priceRange[0] && 
+        pet.price >= filters.priceRange[0] &&
         pet.price <= filters.priceRange[1]
       ));
     });
-    
+
     if (filters.vaccinated !== undefined) {
-      result = result.filter((pet:any) => pet.vaccinated === filters.vaccinated);
+      result = result.filter((pet: any) => pet.vaccinated === filters.vaccinated);
     }
-    
+
     switch (filters.sortBy) {
       case 'newest':
-        result.sort((a:any, b:any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        result.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
       case 'price-low':
-        result.sort((a:any, b:any) => {
+        result.sort((a: any, b: any) => {
           if (a.purpose === 'adopt' && b.purpose === 'adopt') return 0;
           if (a.purpose === 'adopt') return -1;
           if (b.purpose === 'adopt') return 1;
@@ -188,7 +190,7 @@ const page: React.FC = () => {
         });
         break;
       case 'price-high':
-        result.sort((a:any, b:any) => {
+        result.sort((a: any, b: any) => {
           if (a.purpose === 'adopt' && b.purpose === 'adopt') return 0;
           if (a.purpose === 'adopt') return 1;
           if (b.purpose === 'adopt') return -1;
@@ -196,13 +198,13 @@ const page: React.FC = () => {
         });
         break;
       case 'name':
-        result.sort((a:any, b:any) => a.name.localeCompare(b.name));
+        result.sort((a: any, b: any) => a.name.localeCompare(b.name));
         break;
     }
-    
+
     setFilteredPets(result);
-  }, [filters, petList]);
-  
+  }, [petList, filters, isLoading]);
+
   const handleCheckboxFilter = (key: 'species' | 'breeds' | 'purpose' | 'gender', value: string, checked: boolean) => {
     setFilters(prev => {
       if (checked) {
@@ -218,35 +220,36 @@ const page: React.FC = () => {
       }
     });
   };
-  
+
   const handleSwitchFilter = (key: 'vaccinated' | 'neutered', checked: boolean) => {
     setFilters(prev => ({
       ...prev,
       [key]: checked
     }));
   };
-  
+
   const handleRangeFilter = (key: 'ageRange' | 'priceRange', value: [number, number]) => {
     setFilters(prev => ({
       ...prev,
       [key]: value
     }));
   };
-  
+
   const handleSort = (value: SortOption) => {
     setFilters(prev => ({
       ...prev,
       sortBy: value
     }));
   };
-  
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters(prev => ({
-      ...prev,
-      search: e.target.value
-    }));
+    setSearchInput(e.target.value)
+    // setFilters(prev => ({
+    //   ...prev,
+    //   search: e.target.value
+    // }));
   };
-  
+
   const clearAllFilters = () => {
     setFilters({
       search: '',
@@ -261,7 +264,7 @@ const page: React.FC = () => {
       sortBy: 'newest'
     });
   };
-  
+
   const hasActiveFilters = () => {
     return (
       filters.search !== '' ||
@@ -277,22 +280,11 @@ const page: React.FC = () => {
       filters.priceRange[1] !== 5000
     );
   };
-  
+
   const FiltersContent = () => (
     <>
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search pets..."
-            className="pl-8"
-            value={filters.search}
-            onChange={handleSearchChange}
-          />
-        </div>
-      </div>
-      
+
+
       <Accordion type="multiple" defaultValue={['purpose', 'species', 'price']}>
         <AccordionItem value="purpose">
           <AccordionTrigger>Purpose</AccordionTrigger>
@@ -300,10 +292,10 @@ const page: React.FC = () => {
             <div className="space-y-2">
               {purposeOptions.map(purpose => (
                 <div key={purpose} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`purpose-${purpose}`} 
+                  <Checkbox
+                    id={`purpose-${purpose}`}
                     checked={filters.purpose.includes(purpose)}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       handleCheckboxFilter('purpose', purpose, checked as boolean)
                     }
                   />
@@ -318,17 +310,17 @@ const page: React.FC = () => {
             </div>
           </AccordionContent>
         </AccordionItem>
-        
+
         <AccordionItem value="species">
           <AccordionTrigger>Species</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
               {speciesOptions.map(species => (
                 <div key={species} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`species-${species}`} 
+                  <Checkbox
+                    id={`species-${species}`}
                     checked={filters.species.includes(species)}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       handleCheckboxFilter('species', species, checked as boolean)
                     }
                   />
@@ -343,17 +335,17 @@ const page: React.FC = () => {
             </div>
           </AccordionContent>
         </AccordionItem>
-        
+
         <AccordionItem value="breed">
           <AccordionTrigger>Breed</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
               {breedOptions.map(breed => (
                 <div key={breed} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`breed-${breed}`} 
+                  <Checkbox
+                    id={`breed-${breed}`}
                     checked={filters.breeds.includes(breed)}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       handleCheckboxFilter('breeds', breed, checked as boolean)
                     }
                   />
@@ -368,17 +360,17 @@ const page: React.FC = () => {
             </div>
           </AccordionContent>
         </AccordionItem>
-        
+
         <AccordionItem value="gender">
           <AccordionTrigger>Gender</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
               {genderOptions.map(gender => (
                 <div key={gender} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`gender-${gender}`} 
+                  <Checkbox
+                    id={`gender-${gender}`}
                     checked={filters.gender.includes(gender)}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       handleCheckboxFilter('gender', gender, checked as boolean)
                     }
                   />
@@ -393,7 +385,7 @@ const page: React.FC = () => {
             </div>
           </AccordionContent>
         </AccordionItem>
-        
+
         <AccordionItem value="age">
           <AccordionTrigger>Age (years)</AccordionTrigger>
           <AccordionContent>
@@ -412,7 +404,7 @@ const page: React.FC = () => {
             </div>
           </AccordionContent>
         </AccordionItem>
-        
+
         <AccordionItem value="price">
           <AccordionTrigger>Price ($)</AccordionTrigger>
           <AccordionContent>
@@ -431,7 +423,7 @@ const page: React.FC = () => {
             </div>
           </AccordionContent>
         </AccordionItem>
-        
+
         <AccordionItem value="health">
           <AccordionTrigger>Health</AccordionTrigger>
           <AccordionContent>
@@ -456,7 +448,7 @@ const page: React.FC = () => {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-      
+
       <div className="mt-6">
         <Button onClick={clearAllFilters} variant="outline" className="w-full">
           Clear All Filters
@@ -464,8 +456,10 @@ const page: React.FC = () => {
       </div>
     </>
   );
-  
-  console.log('filteredPets',loading,filteredPets)
+
+
+
+  console.log('filteredPets', loading, filteredPets)
   return (
     <Layout>
       <div className="container py-8">
@@ -475,7 +469,7 @@ const page: React.FC = () => {
               <h1 className="text-3xl font-bold tracking-tight">Find Your Perfect Pet</h1>
               <p className="text-muted-foreground">Browse our selection of pets available for adoption, sale, or breeding</p>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <Label htmlFor="sort-by" className="hidden md:inline">Sort by:</Label>
               <Select onValueChange={(value) => handleSort(value as SortOption)} defaultValue={filters.sortBy}>
@@ -489,7 +483,7 @@ const page: React.FC = () => {
                   <SelectItem value="name">Name</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               {isMobile && (
                 <Drawer open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                   <DrawerTrigger asChild>
@@ -517,7 +511,7 @@ const page: React.FC = () => {
             </div>
           </div>
         </ScrollAnimation>
-        
+
         {hasActiveFilters() && (
           <ScrollAnimation type="fade-in" delay={200}>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -529,7 +523,7 @@ const page: React.FC = () => {
                   </button>
                 </Badge>
               )}
-              
+
               {filters.species.map(species => (
                 <Badge key={species} variant="secondary" className="flex items-center gap-1">
                   {species}
@@ -538,7 +532,7 @@ const page: React.FC = () => {
                   </button>
                 </Badge>
               ))}
-              
+
               {filters.breeds.map(breed => (
                 <Badge key={breed} variant="secondary" className="flex items-center gap-1">
                   {breed}
@@ -547,7 +541,7 @@ const page: React.FC = () => {
                   </button>
                 </Badge>
               ))}
-              
+
               {filters.purpose.map(purpose => (
                 <Badge key={purpose} variant="secondary" className="flex items-center gap-1">
                   {purpose.charAt(0).toUpperCase() + purpose.slice(1)}
@@ -556,7 +550,7 @@ const page: React.FC = () => {
                   </button>
                 </Badge>
               ))}
-              
+
               {(filters.ageRange[0] !== 0 || filters.ageRange[1] !== 15) && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Age: {filters.ageRange[0]}-{filters.ageRange[1]} years
@@ -565,7 +559,7 @@ const page: React.FC = () => {
                   </button>
                 </Badge>
               )}
-              
+
               {(filters.priceRange[0] !== 0 || filters.priceRange[1] !== 5000) && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Price: ${filters.priceRange[0]}-${filters.priceRange[1]}
@@ -574,7 +568,7 @@ const page: React.FC = () => {
                   </button>
                 </Badge>
               )}
-              
+
               {filters.vaccinated && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Vaccinated
@@ -583,7 +577,7 @@ const page: React.FC = () => {
                   </button>
                 </Badge>
               )}
-              
+
               {filters.neutered && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Neutered/Spayed
@@ -592,16 +586,16 @@ const page: React.FC = () => {
                   </button>
                 </Badge>
               )}
-              
+
               <Button variant="ghost" size="sm" onClick={clearAllFilters}>
                 Clear All
               </Button>
             </div>
           </ScrollAnimation>
         )}
-        
+
         <Separator className="my-6" />
-        
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {!isMobile && (
             <ScrollAnimation type="fade-in-left" className="hidden md:block">
@@ -609,13 +603,25 @@ const page: React.FC = () => {
                 <h2 className="font-semibold text-lg mb-4">Filters</h2>
                 <ScrollArea className="h-[calc(100vh-220px)] pr-4">
                   <div className="pr-2">
+                    <div className="mb-6">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="search"
+                          placeholder="Search pets..."
+                          className="pl-8 mt-2 ml-2 w-[95%]"
+                          value={searchInput}
+                          onChange={handleSearchChange}
+                        />
+                      </div>
+                    </div>
                     <FiltersContent />
                   </div>
                 </ScrollArea>
               </div>
             </ScrollAnimation>
           )}
-          
+
           <div className="md:col-span-3">
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -634,17 +640,22 @@ const page: React.FC = () => {
             ) : filteredPets.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredPets.map((pet, index) => (
-                    <ScrollAnimation 
-                      key={pet?._id} 
-                      type="fade-in-up" 
-                      delay={(index % 3 * 100 + 100) as 100 | 200 | 300 | 400 | 500}
-                    >
-                      <PetCard pet={pet} className="h-full" />
-                    </ScrollAnimation>
-                  ))}
+                  {filteredPets.map((pet, index) => {
+
+                    const isFavourite = petList?.favourites.includes(pet._id)
+
+                    return (
+                      <ScrollAnimation
+                        key={pet?._id}
+                        type="fade-in-up"
+                        delay={(index % 3 * 100 + 100) as 100 | 200 | 300 | 400 | 500}
+                      >
+                        <PetCard pet={pet} isFavourite={isFavourite} className="h-full" />
+                      </ScrollAnimation>
+                    )
+                  })}
                 </div>
-                
+
                 {/* <ScrollAnimation type="fade-in" delay={300}>
                   <div className="mt-8">
                     <Pagination>

@@ -1,6 +1,6 @@
 import {Address} from './user'
 export interface Pet {
-  _id?: string;
+  _id: string;
   name: string;
   type: 'Dog' | 'Cat' | 'Bird' | 'Fish' | 'Small Mammal' | 'Reptile' | 'Other';
   breed: string;
