@@ -146,7 +146,7 @@ const EditPetPage: React.FC = () => {
   const removeImage = (index: number) => {
     setPetData((prev:any) => ({
       ...prev,
-      images: prev.images.filter((_, i) => i !== index),
+      images: prev.images.filter((_:any, i:number) => i !== index),
     }));
 
     // Revoke the URL to avoid memory leaks

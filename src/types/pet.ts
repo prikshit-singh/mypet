@@ -1,5 +1,6 @@
 import {Address} from './user'
 export interface Pet {
+  id?:string;
   _id: string;
   name: string;
   type: 'Dog' | 'Cat' | 'Bird' | 'Fish' | 'Small Mammal' | 'Reptile' | 'Other';
@@ -15,7 +16,8 @@ export interface Pet {
   neutered?:boolean;
   price?: number;
   vaccinated: boolean;
-  images: File[];
+  images: File[] | string[];
+  city:string;
   createdAt?: string;
   address?:string|Address;
   owner?: {

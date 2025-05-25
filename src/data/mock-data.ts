@@ -121,6 +121,7 @@ export const mockUsers: User[] = [
 export const mockPets: Pet[] = [
   {
     id: 'pet1',
+    _id:'pet1',
     name: 'Max',
     type: 'Dog',
     breed: 'Golden Retriever',
@@ -144,6 +145,7 @@ export const mockPets: Pet[] = [
   },
   {
     id: 'pet2',
+    _id:'pet1',
     name: 'Luna',
     type: 'Cat',
     breed: 'Siamese',
@@ -167,6 +169,7 @@ export const mockPets: Pet[] = [
   },
   {
     id: 'pet3',
+    _id:'pet1',
     name: 'Rocky',
     type: 'Dog',
     breed: 'French Bulldog',
@@ -191,6 +194,7 @@ export const mockPets: Pet[] = [
   },
   {
     id: 'pet4',
+    _id:'pet1',
     name: 'Bella',
     type: 'Dog',
     breed: 'Pomeranian',
@@ -214,6 +218,7 @@ export const mockPets: Pet[] = [
   },
   {
     id: 'pet5',
+    _id:'pet1',
     name: 'Oliver',
     type: 'Cat',
     breed: 'Maine Coon',
@@ -238,6 +243,7 @@ export const mockPets: Pet[] = [
   },
   {
     id: 'pet6',
+    _id:'pet1',
     name: 'Charlie',
     type: 'Bird',
     breed: 'Budgerigar',
@@ -261,6 +267,7 @@ export const mockPets: Pet[] = [
   },
   {
     id: 'pet7',
+    _id:'pet1',
     name: 'Nemo',
     type: 'Fish',
     breed: 'Clownfish',
@@ -285,6 +292,7 @@ export const mockPets: Pet[] = [
   },
   {
     id: 'pet8',
+    _id:'pet1',
     name: 'Rex',
     type: 'Reptile',
     breed: 'Bearded Dragon',

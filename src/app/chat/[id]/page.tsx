@@ -24,35 +24,38 @@ interface Message {
 
 const ChatPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-   const router = useRouter()
+  const router = useRouter()
   const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
-  
+
   // Find the pet by ID
-  const pet = mockPets.find(p => p.id === id);
-  
+  const pet = mockPets.find((p: any) => p.id === id);
+
   useEffect(() => {
-    // Simulate loading chat history
     if (pet) {
+      const ownerId =
+        typeof pet.owner === 'string' ? pet.owner : pet.owner?.id;
+
       const initialMessages: Message[] = [
         {
           id: '1',
-          senderId: pet.owner.id,
+          senderId: ownerId as string,
           text: `Hello! Thank you for your interest in ${pet.name}. How can I help you?`,
-          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-          isRead: true
-        }
+          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
+          isRead: true,
+        },
       ];
+
       setMessages(initialMessages);
     }
   }, [pet]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!message.trim()) return;
-    
+
     // Add user message
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -61,25 +64,29 @@ const ChatPage: React.FC = () => {
       timestamp: new Date(),
       isRead: false
     };
-    
+
     setMessages([...messages, newMessage]);
     setMessage('');
-    
+
     // Simulate owner reply after 1 second
     setTimeout(() => {
+      const owner = pet?.owner;
+      const ownerId = typeof owner === 'string' ? owner : owner?.id;
+      const ownerName = typeof owner === 'string' ? 'Owner' : owner?.name;
+
       const ownerReply: Message = {
         id: (Date.now() + 1).toString(),
-        senderId: pet?.owner.id || 'owner',
+        senderId: ownerId || 'owner',
         text: `Thanks for your message about ${pet?.name}. I'll get back to you with more details soon.`,
         timestamp: new Date(),
-        isRead: false
+        isRead: false,
       };
-      
+
       setMessages(prevMessages => [...prevMessages, ownerReply]);
-      
+
       toast({
         title: "New message",
-        description: `${pet?.owner.name} has replied to your message`,
+        description: `${ownerName} has replied to your message`,
       });
     }, 1000);
   };
@@ -103,35 +110,41 @@ const ChatPage: React.FC = () => {
       <div className="container max-w-4xl py-6">
         <div className="border rounded-lg overflow-hidden flex flex-col h-[calc(100vh-250px)]">
           {/* Chat Header */}
-          <div className="p-4 border-b bg-card flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={pet.owner.avatar} alt={pet.owner.name} />
-                <AvatarFallback>{pet.owner.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="font-medium">{pet.owner.name}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {pet.owner.role === 'individual' ? 'Pet Owner' : 
-                   pet.owner.role === 'shelter' ? 'Shelter' : 'Pet Shop'}
-                </p>
+          {typeof pet.owner !== 'string' && (
+            <div className="p-4 border-b bg-card flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={pet?.owner?.avatar} alt={pet?.owner?.name} />
+                  <AvatarFallback>{pet?.owner?.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-medium">{pet?.owner?.name}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {pet?.owner?.role === 'individual'
+                      ? 'Pet Owner'
+                      : pet?.owner?.role === 'shelter'
+                        ? 'Shelter'
+                        : 'Pet Shop'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" title="Voice Call">
+                  <Phone className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" title="Video Call">
+                  <Video className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" title="More Options">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" title="Voice Call">
-                <Phone className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" title="Video Call">
-                <Video className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" title="More Options">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          )}
+
 
           {/* Chat Messages */}
           <div className="flex-1 p-4 overflow-y-auto bg-muted/10 flex flex-col gap-4">
@@ -140,10 +153,10 @@ const ChatPage: React.FC = () => {
                 Conversation about {pet.name}
               </span>
             </div>
-            
+
             {messages.map((msg) => (
-              <div 
-                key={msg.id} 
+              <div
+                key={msg.id}
                 className={cn(
                   "max-w-[80%] rounded-lg p-3",
                   msg.senderId === user?.id || msg.senderId === 'current-user'
@@ -152,12 +165,13 @@ const ChatPage: React.FC = () => {
                 )}
               >
                 <div className="flex items-start gap-2">
-                  {msg.senderId !== user?.id && msg.senderId !== 'current-user' && (
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={pet.owner.avatar} alt={pet.owner.name} />
-                      <AvatarFallback>{pet.owner.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  )}
+                  {msg.senderId !== user?.id && msg.senderId !== 'current-user' &&
+                    typeof pet?.owner !== 'string' && (
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={pet?.owner?.avatar} alt={pet?.owner?.name} />
+                        <AvatarFallback>{pet?.owner?.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    )}
                   <div>
                     <p>{msg.text}</p>
                     <div className="flex justify-end">

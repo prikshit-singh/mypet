@@ -50,8 +50,13 @@ const AdoptionRequestDialog: React.FC<AdoptionRequestDialogProps> = ({ pet, onRe
     }
 
     try {
+
+      if (!pet?.id) {
+        console.error("Pet ID is missing");
+        return;
+      }
       setIsSubmitting(true);
-      await adoptionService.submitRequest(pet.id, message);
+      await adoptionService.submitRequest(pet?.id, message);
       
       toast({
         title: "Request sent",

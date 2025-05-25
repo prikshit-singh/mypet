@@ -156,7 +156,7 @@ const Home: React.FC =() => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredPets.map((pet, index) => (
               <div key={pet.id} className={`fade-in-up delay-${index * 100}`}>
-                <PetCard pet={pet} />
+                <PetCard pet={pet} isFavourite={false} />
               </div>
             ))}
           </div>
