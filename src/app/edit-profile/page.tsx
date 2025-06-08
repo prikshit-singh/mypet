@@ -1,5 +1,5 @@
 'use client'
-import React, { useState ,useEffect} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import {createAddress,getAddresses,updateAddressById  } from '@/services/authApi';
+import { createAddress, getAddresses, updateAddressById, updateCurrentUser,updateCurrentUserProfileAvatar } from '@/services/authApi';
 
 interface Address {
   street: string;
@@ -34,7 +34,8 @@ interface Address {
 
 const EditProfilePage = () => {
   const { user } = useAuth();
-   const router = useRouter()
+  const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   // Initialize with some default addresses
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [addressMode, setAddressMode] = useState<'existing' | 'new'>('existing');
@@ -45,7 +46,26 @@ const EditProfilePage = () => {
     postalCode: '',
     isDefault: false,
   });
- const queryClient = useQueryClient();
+
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+  });
+
+
+  useEffect(() => {
+    setFormData({
+      name: user?.name || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+    })
+  }, [user])
+
+
+  const queryClient = useQueryClient();
+
+
   useEffect(() => {
     const token = Cookies.get('token');
     console.log(token)
@@ -62,56 +82,100 @@ const EditProfilePage = () => {
   }, [router]);
 
 
-  const { data:addressList, isLoading, isError, refetch } = useQuery({
+  const { data: addressList, isLoading, isError, refetch } = useQuery({
     queryKey: ['addressList'],
     queryFn: getAddresses,
     enabled: !!Cookies.get('token'),
     retry: false,
   });
 
-   const CreateAddressMutation = useMutation<any, Error, Address>(
-      {
-        mutationFn: createAddress,
-        onSuccess: async(address: any) => {
+  const CreateAddressMutation = useMutation<any, Error, Address>(
+    {
+      mutationFn: createAddress,
+      onSuccess: async (address: any) => {
 
-            console.log(address)
-            await queryClient.invalidateQueries({ queryKey: ['addressList'] });
-          toast({
-            title: 'Address saved successfully',
-          });
-       
-        },
-        onError: (err: any) => {
-          toast({
-            title: 'Address Request failed',
-            description: err.message,
-            variant: 'destructive',
-          });
-        },
-      }
-    );
+        console.log(address)
+        await queryClient.invalidateQueries({ queryKey: ['addressList'] });
+        toast({
+          title: 'Address saved successfully',
+        });
 
-    const UpdateAddressMutation = useMutation<any, Error, Address>(
-        {
-          mutationFn: updateAddressById,
-          onSuccess: async(address: any) => {
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Address Request failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+      },
+    }
+  );
+
+  const UpdateAddressMutation = useMutation<any, Error, Address>(
+    {
+      mutationFn: updateAddressById,
+      onSuccess: async (address: any) => {
+
+        console.log(address)
+        await queryClient.invalidateQueries({ queryKey: ['addressList'] });
+        toast({
+          title: 'Default Address Updated',
+        });
+
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Address Request failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+      },
+    }
+  );
+
+
+  const updateCurrentUserMutation = useMutation<any, Error, any>(
+    {
+      mutationFn: updateCurrentUser,
+      onSuccess: async (updatedReq: any) => {
+        await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        toast({
+          title: "User updated successfully.",
+          description: "User has been updated successfully.",
+        });
+
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Update user request failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+      },
+    }
+  );
+
   
-              console.log(address)
-              await queryClient.invalidateQueries({ queryKey: ['addressList'] });
-            toast({
-              title: 'Default Address Updated',
-            });
-         
-          },
-          onError: (err: any) => {
-            toast({
-              title: 'Address Request failed',
-              description: err.message,
-              variant: 'destructive',
-            });
-          },
-        }
-      );
+  const updateCurrentUserProfileAvatarMutation = useMutation<any, Error, any>(
+    {
+      mutationFn: updateCurrentUserProfileAvatar,
+      onSuccess: async (updatedReq: any) => {
+        await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        toast({
+          title: "User updated successfully.",
+          description: "User avatar updated successfully.",
+        });
+
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Update user request failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+      },
+    }
+  );
 
   const handleAddressSave = () => {
 
@@ -142,7 +206,7 @@ const EditProfilePage = () => {
 
   const handleMakeDefault = (index: number) => {
 
-    UpdateAddressMutation.mutate({...addressList.data[index],isDefault:true})
+    UpdateAddressMutation.mutate({ ...addressList.data[index], isDefault: true })
 
     // setAddresses(prev => 
     //   prev.map((addr, i) => ({
@@ -156,19 +220,30 @@ const EditProfilePage = () => {
     // });
   };
 
-  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // In a real app, you would upload this file to your storage
-      toast({
-        title: "Profile Picture Updated",
-        description: "Your profile picture has been updated successfully.",
-      });
-    }
+const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('avatar', file);
+
+  updateCurrentUserProfileAvatarMutation.mutate(formData);
+};
+
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  console.log('addressList',addressList)
+  const saveCurrentUserProfile = () => {
+    updateCurrentUserMutation.mutate(formData)
+  }
 
+  const handleButtonClick = () => {
+    fileInputRef.current?.click();
+  };
   return (
     <Layout>
       <div className="container py-8 space-y-8">
@@ -194,7 +269,7 @@ const EditProfilePage = () => {
                   <div>
                     <Label htmlFor="picture" className="cursor-pointer">
                       <div className="flex flex-col gap-2">
-                        <Button variant="outline" className="cursor-pointer">
+                        <Button onClick={handleButtonClick} variant="outline" className="cursor-pointer">
                           Change Picture
                         </Button>
                         <span className="text-sm text-muted-foreground">
@@ -203,6 +278,7 @@ const EditProfilePage = () => {
                       </div>
                     </Label>
                     <Input
+                      ref={fileInputRef}
                       id="picture"
                       type="file"
                       accept="image/*"
@@ -221,21 +297,18 @@ const EditProfilePage = () => {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">Name</Label>
-                    <Input id="name" defaultValue={user?.name} />
+                    <Input name='name' placeholder="Your name" value={formData?.name} onChange={handleChange} />
+
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      value={user?.email} 
-                      readOnly 
-                      className="bg-muted cursor-not-allowed"
-                    />
+                    <Input name='email' placeholder="Your email" value={formData?.email} onChange={handleChange} disabled />
+
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone</Label>
-                    <Input id="phone" defaultValue={user?.phone || ''} />
+                    <Input placeholder="Your phone number" name='phone' type='number' value={formData?.phone} onChange={handleChange} />
+
                   </div>
                 </div>
               </div>
@@ -267,7 +340,7 @@ const EditProfilePage = () => {
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
-                      
+
                       <div className="space-y-4">
                         <RadioGroup
                           value={addressMode}
@@ -284,9 +357,9 @@ const EditProfilePage = () => {
                           </div>
                         </RadioGroup>
 
-                        {addressMode === 'existing' &&  addressList?.success && addressList?.data.length > 0 ? (
+                        {addressMode === 'existing' && addressList?.success && addressList?.data.length > 0 ? (
                           <div className="space-y-4">
-                            {addressList?.data.map((address:any, index:number) => (
+                            {addressList?.data.map((address: any, index: number) => (
                               <Card key={index}>
                                 <CardContent className="pt-6">
                                   <div className="flex justify-between items-start">
@@ -300,8 +373,8 @@ const EditProfilePage = () => {
                                       )}
                                     </div>
                                     {!address.isDefault && (
-                                      <Button 
-                                        variant="outline" 
+                                      <Button
+                                        variant="outline"
                                         size="sm"
                                         onClick={() => handleMakeDefault(index)}
                                       >
@@ -362,7 +435,7 @@ const EditProfilePage = () => {
                                 <Switch
                                   id="default-address"
                                   checked={newAddress.isDefault}
-                                  onCheckedChange={(checked) => 
+                                  onCheckedChange={(checked) =>
                                     setNewAddress(prev => ({ ...prev, isDefault: checked }))
                                   }
                                 />
@@ -388,11 +461,11 @@ const EditProfilePage = () => {
                     </CardContent>
                   </Card>
                 )}
-                
+
                 {/* Show the list of addresses on the main page */}
                 {!showAddressForm && addressList?.success && addressList?.data.length > 0 && (
                   <div className="space-y-2">
-                    {addressList?.data.map((address:any, index:number) => (
+                    {addressList?.data.map((address: any, index: number) => (
                       <div key={index} className="flex items-center gap-2">
                         <div className={`p-2 rounded-md border ${address.isDefault ? 'border-green-500' : 'border-gray-200'} flex-grow`}>
                           <p className="font-medium">{address.street}</p>
@@ -411,7 +484,7 @@ const EditProfilePage = () => {
 
               <div className="flex justify-end space-x-4">
                 <Button variant="outline">Cancel</Button>
-                <Button>Save Changes</Button>
+                <Button onClick={saveCurrentUserProfile}>Save Changes</Button>
               </div>
             </div>
           </CardContent>

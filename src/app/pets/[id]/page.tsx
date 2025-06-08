@@ -3,26 +3,26 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  Share2, 
-  Heart, 
-  Medal, 
-  MapPin, 
-  Calendar, 
-  Shield, 
-  Star, 
-  MessageCircle, 
+import {
+  ArrowLeft,
+  Share2,
+  Heart,
+  Medal,
+  MapPin,
+  Calendar,
+  Shield,
+  Star,
+  MessageCircle,
   Info,
   AlertTriangle,
   Check,
   ThumbsUp
 } from 'lucide-react';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
 } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -44,12 +44,11 @@ import {
 } from "@/components/ui/dialog";
 import { ImageSlider } from '@/components/ui/image-slider';
 import Layout from '@/components/layout/Layout';
-import { mockPets } from '@/data/mock-data';
-import { Pet } from '@/types/pet';
 import { toast } from '@/hooks/use-toast';
 import RatingModal from '@/components/ratings/RatingModal';
-import { useQueryClient,useQuery ,useMutation} from '@tanstack/react-query';
-import { getSinglePets,toggolFavouritePet,ratePetOwner } from '@/services/petServices';
+import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
+import { getSinglePets, toggolFavouritePet, ratePetOwner } from '@/services/petServices';
+import AdoptionRequestDialog from '@/components/adoption/AdoptionRequestDialog';
 
 const PetDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -67,7 +66,7 @@ const PetDetailsPage: React.FC = () => {
       onSuccess: async (pet: any) => {
         await queryClient.invalidateQueries({ queryKey: ['getSinglePet'] });
         await queryClient.invalidateQueries({ queryKey: ['petList'] });
-        
+
       },
       onError: (err: any) => {
         toast({
@@ -81,19 +80,14 @@ const PetDetailsPage: React.FC = () => {
   );
 
 
-
-
-
-
-
   const { data: pet, isLoading, isError } = useQuery({
-    queryKey: ['getSinglePet',id],
+    queryKey: ['getSinglePet', id],
     queryFn: ({ queryKey }) => getSinglePets(queryKey[1]),
-    refetchOnMount:true,
+    refetchOnMount: true,
     retry: true,
   });
-  
-  
+
+
   console.log(pet)
   if (!pet) {
     return (
@@ -116,13 +110,13 @@ const PetDetailsPage: React.FC = () => {
 
   const handleSubmitRequest = () => {
     setIsContactDialogOpen(false);
-    
+
     router.push(`/chat/${pet._id}`);
   };
 
-  const handleAddToFavorites = (id:string) => {
+  const handleAddToFavorites = (id: string) => {
     ToggolFavourite.mutate(id)
-   
+
   };
 
   const handleShare = () => {
@@ -145,30 +139,55 @@ const PetDetailsPage: React.FC = () => {
   const renderActionButtons = () => {
     if (pet.purpose === 'adopt') {
       return (
-        <Button 
-          className="flex-1"
-          onClick={() => handleAction('adopt')}
-        >
-          Request Adoption
-        </Button>
+        // <Button 
+        //   className="flex-1"
+        //   onClick={() => handleAction('adopt')}
+        // >
+        //   Request Adoption
+        // </Button>
+
+        <AdoptionRequestDialog
+          pet={pet}
+          buttonText="Request Adoption"
+          title={`Request to Adopt ${pet.name}.`}
+          placeholder={`Hi, I'm interested in adopting ${pet.name}...`}
+
+        />
       );
     } else if (pet.purpose === 'sell') {
       return (
-        <Button 
-          className="flex-1"
-          onClick={() => handleAction('buy')}
-        >
-          {`Buy Now - $${parseFloat(pet.price)}`}
-        </Button>
+        // <Button 
+        //   className="flex-1"
+        //   onClick={() => handleAction('buy')}
+        // >
+        //   {`Buy Now - $${parseFloat(pet.price)}`}
+        // </Button>
+
+        <AdoptionRequestDialog
+          pet={pet}
+          buttonText={`Buy Now - $${parseFloat(pet.price)}`}
+          title={`Request to Buy ${pet.name}.`}
+          placeholder={`Hi, I'm interested in buying ${pet.name}...`}
+
+        />
       );
     } else {
       return (
-        <Button 
-          className="flex-1"
-          onClick={() => handleAction('breed')}
-        >
-          Send Breeding Request
-        </Button>
+        // <Button 
+        //   className="flex-1"
+        //   onClick={() => handleAction('breed')}
+        // >
+        //   Send Breeding Request
+        // </Button>
+
+        <AdoptionRequestDialog
+          pet={pet}
+          buttonText={`Send Breeding Request`}
+          title={`Request to Breed ${pet.name}.`}
+          placeholder={`Hi, I'm interested in breeding with ${pet.name}...`}
+
+
+        />
       );
     }
   };
@@ -186,8 +205,8 @@ const PetDetailsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-8">
           <div>
             <div className="mb-6">
-              <ImageSlider 
-                images={pet.images} 
+              <ImageSlider
+                images={pet.images}
                 className="aspect-video rounded-lg overflow-hidden"
               />
             </div>
@@ -198,11 +217,11 @@ const PetDetailsPage: React.FC = () => {
                 <TabsTrigger value="owner">Owner Info</TabsTrigger>
                 <TabsTrigger value="terms">Terms</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="details" className="p-4 border rounded-lg mt-4">
                 <h3 className="text-lg font-semibold mb-4">About {pet.name}</h3>
                 <p className="text-muted-foreground mb-6">{pet.description}</p>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <h4 className="font-medium">Pet Details</h4>
@@ -223,14 +242,14 @@ const PetDetailsPage: React.FC = () => {
                       <span>{pet.gender}</span>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <h4 className="font-medium">Health & Status</h4>
                     <div className="grid grid-cols-2 text-sm">
                       <span className="text-muted-foreground">Vaccinated</span>
                       <span className="flex items-center">
-                        {pet.vaccinated ? 
-                          <Check className="h-4 w-4 text-green-600 mr-1" /> : 
+                        {pet.vaccinated ?
+                          <Check className="h-4 w-4 text-green-600 mr-1" /> :
                           <AlertTriangle className="h-4 w-4 text-amber-500 mr-1" />
                         }
                         {pet.vaccinated ? 'Yes' : 'No'}
@@ -255,12 +274,12 @@ const PetDetailsPage: React.FC = () => {
                   </div>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="owner" className="p-4 border rounded-lg mt-4">
                 <div className="flex items-center gap-4 mb-6">
-                  <img 
-                    src={pet.owner.avatar ?pet.owner.avatar :'/maleAvatar.jpg' } 
-                    alt={pet.owner.name} 
+                  <img
+                    src={pet.owner.avatar ? pet.owner.avatar : '/maleAvatar.jpg'}
+                    alt={pet.owner.name}
                     className="w-16 h-16 rounded-full object-cover"
                   />
                   <div>
@@ -283,8 +302,8 @@ const PetDetailsPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="capitalize">{pet.owner.role}</span>
-                      <button 
-                        className="flex items-center hover:text-primary transition-colors" 
+                      <button
+                        className="flex items-center hover:text-primary transition-colors"
                         onClick={() => setIsRatingModalOpen(true)}
                       >
                         <Star className="h-4 w-4 text-amber-500 mr-1 fill-amber-500" />
@@ -294,26 +313,26 @@ const PetDetailsPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-3">
-                  <Button 
-                    className="w-full" 
+                  <Button
+                    className="w-full"
                     onClick={() => {
                       const actionMap = {
                         'adopt': 'adopt',
                         'sell': 'buy',
                         'breed': 'breed'
                       } as const;
-                      handleAction(actionMap[pet.purpose as 'breed'|'sell'|'adopt']);
+                      handleAction(actionMap[pet.purpose as 'breed' | 'sell' | 'adopt']);
                     }}
                   >
                     <MessageCircle className="mr-2 h-4 w-4" />
                     Contact Owner
                   </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full" 
+
+                  <Button
+                    variant="outline"
+                    className="w-full"
                     onClick={() => setIsRatingModalOpen(true)}
                   >
                     <Star className="mr-2 h-4 w-4" />
@@ -321,14 +340,14 @@ const PetDetailsPage: React.FC = () => {
                   </Button>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="terms" className="p-4 border rounded-lg mt-4">
                 <h3 className="text-lg font-semibold mb-4">
                   {pet.purpose === 'adopt' && 'Adoption Terms'}
                   {pet.purpose === 'sell' && 'Purchase Terms'}
                   {pet.purpose === 'breed' && 'Breeding Terms'}
                 </h3>
-                
+
                 {pet.purpose === 'adopt' && (
                   <div className="space-y-4">
                     <p className="text-muted-foreground">
@@ -349,7 +368,7 @@ const PetDetailsPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {pet.purpose === 'sell' && (
                   <div className="space-y-4">
                     <p className="text-muted-foreground">
@@ -370,7 +389,7 @@ const PetDetailsPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {pet.purpose === 'breed' && (
                   <div className="space-y-4">
                     <p className="text-muted-foreground">
@@ -401,21 +420,21 @@ const PetDetailsPage: React.FC = () => {
                 <div className="flex justify-between items-start mb-2">
                   <h1 className="text-2xl font-bold">{pet.name}</h1>
                   <div className="flex space-x-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={handleShare}
                     >
                       <Share2 className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={()=>handleAddToFavorites(pet._id)}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleAddToFavorites(pet._id)}
                     >
 
 
-                      {pet.isFavourite ?<Heart className="h-4 w-4 fill-red-500 text-white  bg-red" /> : <Heart className="h-4 w-4 " /> }
+                      {pet.isFavourite ? <Heart className="h-4 w-4 fill-red-500 text-white  bg-red" /> : <Heart className="h-4 w-4 " />}
                     </Button>
                   </div>
                 </div>
@@ -454,16 +473,16 @@ const PetDetailsPage: React.FC = () => {
               </div>
 
               <div className="mb-4">
-                <Button 
-                  variant="ghost" 
-                  className="h-auto p-0 hover:bg-transparent flex items-center gap-1 text-amber-500" 
+                <Button
+                  variant="ghost"
+                  className="h-auto p-0 hover:bg-transparent flex items-center gap-1 text-amber-500"
                   onClick={() => setIsRatingModalOpen(true)}
                 >
                   <div className="flex">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <Star 
-                        key={star} 
-                        className="h-4 w-4" 
+                      <Star
+                        key={star}
+                        className="h-4 w-4"
                         fill={star <= Math.round(pet.owner.averageRating) ? "currentColor" : "transparent"}
                       />
                     ))}
@@ -482,9 +501,9 @@ const PetDetailsPage: React.FC = () => {
               <div className="mb-4">
                 <h3 className="text-sm font-medium text-muted-foreground mb-2">Owner</h3>
                 <div className="flex items-center gap-2">
-                  <img 
-                    src={pet.owner.avatar ?pet.owner.avatar :'/maleAvatar.jpg'} 
-                    alt={pet.owner.name} 
+                  <img
+                    src={pet.owner.avatar ? pet.owner.avatar : '/maleAvatar.jpg'}
+                    alt={pet.owner.name}
                     className="w-8 h-8 rounded-full object-cover"
                   />
                   <div>
@@ -494,8 +513,8 @@ const PetDetailsPage: React.FC = () => {
                         <Medal className="h-3 w-3 ml-1 text-green-600" />
                       )}
                     </div>
-                    <button 
-                      className="flex items-center text-xs text-muted-foreground hover:text-primary transition-colors" 
+                    <button
+                      className="flex items-center text-xs text-muted-foreground hover:text-primary transition-colors"
                       onClick={() => setIsRatingModalOpen(true)}
                     >
                       <Star className="h-3 w-3 text-amber-500 mr-1 fill-amber-500" />
@@ -509,7 +528,7 @@ const PetDetailsPage: React.FC = () => {
 
               <div className="flex gap-3">
                 {renderActionButtons()}
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => router.push(`/chat/${pet.id}`)}
                 >
@@ -540,8 +559,8 @@ const PetDetailsPage: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <textarea 
-              className="w-full p-3 rounded-md border border-input text-sm" 
+            <textarea
+              className="w-full p-3 rounded-md border border-input text-sm"
               rows={5}
               placeholder={`Hello, I'm interested in ${actionType === 'adopt' ? 'adopting' : actionType === 'buy' ? 'purchasing' : 'breeding with'} ${pet.name}. I'd like to learn more and discuss next steps.`}
             ></textarea>
@@ -561,6 +580,8 @@ const PetDetailsPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+
 
       <RatingModal
         isOpen={isRatingModalOpen}

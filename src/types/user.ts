@@ -20,6 +20,12 @@ export interface User {
   state?: string;
   operatingHours?: string;
   emergencyContact?: string;
+  notification?:{
+    email:boolean,
+     messages: boolean,
+    petRequests: boolean,
+    marketing: boolean,
+  }
 }
 
 export interface UserCredentials {

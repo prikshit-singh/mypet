@@ -1,16 +1,16 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { 
-  PlusCircle, 
-  Inbox, 
-  User, 
-  Heart, 
-  LogOut, 
-  PawPrint, 
-  Settings, 
-  Edit, 
-  Trash, 
+import {
+  PlusCircle,
+  Inbox,
+  User,
+  Heart,
+  LogOut,
+  PawPrint,
+  Settings,
+  Edit,
+  Trash,
   Check,
   X,
   MessageSquare,
@@ -45,7 +45,8 @@ import { toast } from '@/hooks/use-toast';
 import Layout from '@/components/layout/Layout';
 import { mockPets, mockUsers } from '@/data/mock-data';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserPets,getUserFavouritePets ,toggolFavouritePet ,deleteSinglePets , } from '@/services/petServices';
+import { getUserPets, getUserFavouritePets, toggolFavouritePet, deleteSinglePets, getSentRequest, getReceivedRequest, updateRequest, } from '@/services/petServices';
+import { updateCurrentUser, updateCurrentUserPassword } from '@/services/authApi';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 
@@ -53,102 +54,191 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 // Mock data for dashboard
 // const currentUser = mockUsers[0]; // Using the first user as the current user
 // const userPets = mockPets.filter(pet => pet.owner._id === currentUser.id);
-const favoritePets = mockPets.slice(1, 4); // Just using some pets as favorites for demo
 
-// Mock adoption/purchase requests
-const mockRequests = [
-  {
-    id: 'req1',
-    petId: mockPets[0].id,
-    petName: mockPets[0].name,
-    petImage: mockPets[0].images[0],
-    type: 'adoption',
-    status: 'pending',
-    requesterId: mockUsers[3].id,
-    requesterName: mockUsers[3].name,
-    requesterAvatar: mockUsers[3].avatar,
-    message: "Hello, I'm interested in adopting Max. He looks like a wonderful dog and I think he'd fit perfectly in my family. Could we arrange a meeting?",
-    date: '2023-07-20T14:30:00.000Z',
-  },
-  {
-    id: 'req2',
-    petId: mockPets[2].id,
-    petName: mockPets[2].name,
-    petImage: mockPets[2].images[0],
-    type: 'purchase',
-    status: 'approved',
-    requesterId: mockUsers[1].id,
-    requesterName: mockUsers[1].name,
-    requesterAvatar: mockUsers[1].avatar,
-    message: "Hi there! I'd like to purchase Rocky. He looks amazing and I'm willing to pay the listed price. When can I come see him?",
-    date: '2023-07-18T09:15:00.000Z',
-  },
-  {
-    id: 'req3',
-    petId: mockPets[4].id,
-    petName: mockPets[4].name,
-    petImage: mockPets[4].images[0],
-    type: 'breeding',
-    status: 'rejected',
-    requesterId: mockUsers[4].id,
-    requesterName: mockUsers[4].name,
-    requesterAvatar: mockUsers[4].avatar,
-    message: "Hello, I have a female Maine Coon and I'm interested in breeding with Oliver. Could we discuss the details?",
-    date: '2023-07-15T11:45:00.000Z',
-  },
-];
 
 const DashboardPage: React.FC = () => {
-  const { user:currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
+  console.log('user', currentUser)
+
+  const [formData, setFormData] = useState({
+    name: currentUser?.name || '',
+    email: currentUser?.email || '',
+    bio: currentUser?.bio || '',
+    phone: currentUser?.phone || '',
+  });
+
+
+  const [passwordFields, setPasswordFields] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  })
+
+
+  const [notificationFields, setNotificationFields] = useState({
+    email: true,
+    messages: true,
+    petRequests: true,
+    marketing: true,
+  })
+
+
   const [activeTab, setActiveTab] = useState('my-pets');
   const queryClient = useQueryClient();
-  const { data:userPets, isLoading, isError, refetch } = useQuery({
+
+  useEffect(() => {
+    setFormData({
+      name: currentUser?.name || '',
+      email: currentUser?.email || '',
+      bio: currentUser?.bio || '',
+      phone: currentUser?.phone || '',
+    })
+
+
+    setNotificationFields({
+      email: currentUser?.notification?.email !== undefined ? currentUser?.notification?.email : true,
+      messages: currentUser?.notification?.email !== undefined ? currentUser?.notification?.messages : true,
+      petRequests: currentUser?.notification?.email !== undefined ? currentUser?.notification?.petRequests : true,
+      marketing: currentUser?.notification?.email !== undefined ? currentUser?.notification?.marketing : true,
+    })
+
+    console.log('currentUser?.notification?.messages', currentUser?.notification?.messages)
+  }, [currentUser])
+
+
+  const { data: userPets, isLoading, isError, refetch } = useQuery({
     queryKey: ['getUserPets'],
     queryFn: getUserPets,
     enabled: !!Cookies.get('token'),
     retry: false,
   });
 
-  const { data:favoritePets } = useQuery({
+  const { data: favoritePets } = useQuery({
     queryKey: ['getUserFavouritePets'],
     queryFn: getUserFavouritePets,
     enabled: !!Cookies.get('token'),
     retry: false,
   });
 
-     const deletePetMutation = useMutation<any, Error, string>(
-          {
-            mutationFn: deleteSinglePets,
-            onSuccess: async(deleteRes: any) => {
-    
-                console.log(deleteRes)
-                await queryClient.invalidateQueries({ queryKey: ['getUserPets'] });
-                toast({
-                  title: "Pet Deleted",
-                  description: "Pet has been removed from your listings.",
-                });
-           
-            },
-            onError: (err: any) => {
-              toast({
-                title: 'Pet Deleted Request failed',
-                description: err.message,
-                variant: 'destructive',
-              });
-            },
-          }
-        );
+  const { data: petSentReequests, isLoading: sentRequestIsLoading, isError: sentRequestIsError, refetch: sentRequestRefetch } = useQuery({
+    queryKey: ['getUserSentRequest'],
+    queryFn: getSentRequest,
+    enabled: !!Cookies.get('token'),
+    retry: false,
+  });
+
+
+  const { data: petReceivedReequests, isLoading: receivedRequestIsLoading, isError: receivedRequestIsError, refetch: receivedRequestRefetch } = useQuery({
+    queryKey: ['getUserReceivedRequest'],
+    queryFn: getReceivedRequest,
+    enabled: !!Cookies.get('token'),
+    retry: false,
+  });
+
+  const deletePetMutation = useMutation<any, Error, string>(
+    {
+      mutationFn: deleteSinglePets,
+      onSuccess: async (deleteRes: any) => {
+
+        console.log(deleteRes)
+        await queryClient.invalidateQueries({ queryKey: ['getUserPets'] });
+        toast({
+          title: "Pet Deleted",
+          description: "Pet has been removed from your listings.",
+        });
+
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Pet Deleted Request failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+      },
+    }
+  );
+
+  const updatePetRequestStates = useMutation<any, Error, { requestId: string, status: 'approved' | 'rejected' }>(
+    {
+      mutationFn: updateRequest,
+      onSuccess: async (updatedReq: any) => {
+
+        console.log(updatedReq)
+        await queryClient.invalidateQueries({ queryKey: ['getUserSentRequest'] });
+        await queryClient.invalidateQueries({ queryKey: ['getUserReceivedRequest'] });
+        // toast({
+        //   title: "Pet Status updated",
+        //   description: "Pet has been removed from your listings.",
+        // });
+
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Pet status request failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+      },
+    }
+  );
+
+  const updateCurrentUserMutation = useMutation<any, Error, any>(
+    {
+      mutationFn: updateCurrentUser,
+      onSuccess: async (updatedReq: any) => {
+        await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        toast({
+          title: "User updated successfully.",
+          description: "User has been updated successfully.",
+        });
+
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Update user request failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+      },
+    }
+  );
+
+  const updateCurrentUserPasswordMutation = useMutation<any, Error, any>(
+    {
+      mutationFn: updateCurrentUserPassword,
+      onSuccess: async (updatedReq: any) => {
+
+        console.log(updatedReq)
+        await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        toast({
+          title: "User updated successfully.",
+          description: "User password updated successfully.",
+        });
+
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Update user request failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+      },
+    }
+  );
 
   const handleDeletePet = (petId: string) => {
 
     deletePetMutation.mutate(petId)
-   
+
   };
 
-  const handleRequestAction = (requestId: string, action: 'approve' | 'reject') => {
+  const handleRequestAction = (requestId: string, action: 'approved' | 'rejected') => {
+
+    updatePetRequestStates.mutate({ requestId: requestId, status: action })
+
     toast({
-      title: action === 'approve' ? "Request Approved" : "Request Rejected",
-      description: `The request has been ${action === 'approve' ? 'approved' : 'rejected'}.`,
+      title: action === 'approved' ? "Request Approved" : "Request Rejected",
+      description: `The request has been ${action === 'approved' ? 'approved' : 'rejected'}.`,
     });
   };
 
@@ -159,29 +249,81 @@ const DashboardPage: React.FC = () => {
     });
   };
 
-    const ToggolFavourite = useMutation<any, Error, any>(
-          {
-            mutationFn: toggolFavouritePet,
-            onSuccess: async (pet: any) => {
-              await queryClient.invalidateQueries({ queryKey: ['getUserFavouritePets'] });
-              // toast({
-              //   title: 'Pet saved successfully',
-              // });
-            },
-            onError: (err: any) => {
-              toast({
-                title: 'Pet Request failed',
-                description: err.message,
-                variant: 'destructive',
-              });
-      
-            },
-          }
-        );
-  
-        const handleToggol = (id:string)=>{
-          ToggolFavourite.mutate(id)
+  const ToggolFavourite = useMutation<any, Error, any>(
+    {
+      mutationFn: toggolFavouritePet,
+      onSuccess: async (pet: any) => {
+        await queryClient.invalidateQueries({ queryKey: ['getUserFavouritePets'] });
+        // toast({
+        //   title: 'Pet saved successfully',
+        // });
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Pet Request failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+
+      },
+    }
+  );
+
+  const handleToggol = (id: string) => {
+    ToggolFavourite.mutate(id)
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setPasswordFields(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSettingsToggle = (key: keyof typeof notificationFields) => {
+    setNotificationFields(prev => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const saveCurrentUserProfile = () => {
+    updateCurrentUserMutation.mutate(formData)
+  }
+
+  const saveCurrentUserNotification = (type: string) => {
+    if (type === 'default') {
+      updateCurrentUserMutation.mutate({
+        notification: {
+          email: true,
+          messages: true,
+          petRequests: true,
+          marketing: true,
         }
+
+      })
+    } else {
+      updateCurrentUserMutation.mutate({ notification: notificationFields })
+
+    }
+  }
+
+  const updatePassword = () => {
+
+    if (passwordFields.newPassword !== passwordFields.confirmPassword) {
+      toast({
+        title: 'Password not match.',
+        description: 'New password and confirm password are not same.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    updateCurrentUserPasswordMutation.mutate(passwordFields)
+  }
 
   return (
     <Layout>
@@ -200,13 +342,13 @@ const DashboardPage: React.FC = () => {
                   <h2 className="font-semibold text-xl">{currentUser?.name}</h2>
                   <p className="text-sm text-muted-foreground mb-1">@{currentUser?.name.toLowerCase().replace(' ', '')}</p>
                   <Badge className="capitalize mt-1">{currentUser?.role}</Badge>
-                  
+
                   {currentUser?.isVerified && (
                     <Badge variant="outline" className="border-green-500 text-green-600 mt-2">
                       Verified Account
                     </Badge>
                   )}
-                  
+
                   <Link href="/edit-profile" className="w-full mt-4">
                     <Button variant="outline" className="w-full">
                       <Edit className="h-4 w-4 mr-2" />
@@ -216,38 +358,38 @@ const DashboardPage: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* Navigation Menu */}
             <Card>
               <CardContent className="p-0">
                 <nav className="space-y-1">
-                  <Button 
-                    variant={activeTab === 'my-pets' ? 'secondary' : 'ghost'} 
+                  <Button
+                    variant={activeTab === 'my-pets' ? 'secondary' : 'ghost'}
                     className="w-full justify-start"
                     onClick={() => setActiveTab('my-pets')}
                   >
                     <PawPrint className="h-4 w-4 mr-2" />
                     My Pets
                   </Button>
-                  <Button 
-                    variant={activeTab === 'requests' ? 'secondary' : 'ghost'} 
+                  <Button
+                    variant={activeTab === 'requests' ? 'secondary' : 'ghost'}
                     className="w-full justify-start"
                     onClick={() => setActiveTab('requests')}
                   >
                     <Inbox className="h-4 w-4 mr-2" />
                     Requests
-                    <Badge className="ml-auto" variant="secondary">3</Badge>
+                    <Badge className="ml-auto" variant="secondary">{petReceivedReequests?.length || 0}</Badge>
                   </Button>
-                  <Button 
-                    variant={activeTab === 'favorites' ? 'secondary' : 'ghost'} 
+                  <Button
+                    variant={activeTab === 'favorites' ? 'secondary' : 'ghost'}
                     className="w-full justify-start"
                     onClick={() => setActiveTab('favorites')}
                   >
                     <Heart className="h-4 w-4 mr-2" />
                     Favorites
                   </Button>
-                  <Button 
-                    variant={activeTab === 'messages' ? 'secondary' : 'ghost'} 
+                  <Button
+                    variant={activeTab === 'messages' ? 'secondary' : 'ghost'}
                     className="w-full justify-start"
                     onClick={() => setActiveTab('messages')}
                   >
@@ -255,8 +397,8 @@ const DashboardPage: React.FC = () => {
                     Messages
                     <Badge className="ml-auto" variant="secondary">5</Badge>
                   </Button>
-                  <Button 
-                    variant={activeTab === 'settings' ? 'secondary' : 'ghost'} 
+                  <Button
+                    variant={activeTab === 'settings' ? 'secondary' : 'ghost'}
                     className="w-full justify-start"
                     onClick={() => setActiveTab('settings')}
                   >
@@ -264,8 +406,8 @@ const DashboardPage: React.FC = () => {
                     Settings
                   </Button>
                   <Separator className="my-2" />
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={handleLogout}
                   >
@@ -276,7 +418,7 @@ const DashboardPage: React.FC = () => {
               </CardContent>
             </Card>
           </aside>
-          
+
           {/* Main Content */}
           <main>
             {/* My Pets Tab */}
@@ -291,15 +433,15 @@ const DashboardPage: React.FC = () => {
                     </Button>
                   </Link>
                 </div>
-                
+
                 {userPets && userPets.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {userPets.map((pet:any) => (
+                    {userPets.map((pet: any) => (
                       <Card key={pet._id} className="overflow-hidden">
                         <div className="aspect-video relative">
-                          <img 
-                            src={pet.images[0]} 
-                            alt={pet.name} 
+                          <img
+                            src={pet.images[0]}
+                            alt={pet.name}
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute top-2 right-2">
@@ -316,7 +458,7 @@ const DashboardPage: React.FC = () => {
                                 <DropdownMenuItem asChild>
                                   <Link href={`/edit-pet/${pet._id}`}>Edit</Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"
                                   onClick={() => handleDeletePet(pet._id)}
                                 >
@@ -383,27 +525,27 @@ const DashboardPage: React.FC = () => {
                 )}
               </div>
             )}
-            
+
             {/* Requests Tab */}
             {activeTab === 'requests' && (
               <div>
                 <h1 className="text-2xl font-bold mb-6">Requests</h1>
-                
+
                 <Tabs defaultValue="received">
                   <TabsList className="mb-4">
                     <TabsTrigger value="received">Received</TabsTrigger>
                     <TabsTrigger value="sent">Sent</TabsTrigger>
                   </TabsList>
-                  
+
                   <TabsContent value="received" className="space-y-4">
-                    {mockRequests.map(request => (
-                      <Card key={request.id}>
+                    {petReceivedReequests && petReceivedReequests.length > 0 ? petReceivedReequests.map((request: any) => (
+                      <Card key={request._id}>
                         <CardContent className="p-4 sm:p-6">
                           <div className="flex flex-col sm:flex-row gap-4">
                             <div className="sm:w-20 sm:h-20 w-full h-32 flex-shrink-0">
-                              <img 
-                                src={request.petImage} 
-                                alt={request.petName} 
+                              <img
+                                src={request.pet.images[0]}
+                                alt={request.pet.name}
                                 className="w-full h-full object-cover rounded-md"
                               />
                             </div>
@@ -411,18 +553,18 @@ const DashboardPage: React.FC = () => {
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
                                 <div>
                                   <div className="flex items-center gap-2">
-                                    <h3 className="font-semibold">{request.petName}</h3>
-                                    {request.type === 'adoption' && (
+                                    <h3 className="font-semibold">{request.pet.name}</h3>
+                                    {request.type === 'adopt' && (
                                       <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
                                         Adoption
                                       </Badge>
                                     )}
-                                    {request.type === 'purchase' && (
+                                    {request.type === 'buy' && (
                                       <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
                                         Purchase
                                       </Badge>
                                     )}
-                                    {request.type === 'breeding' && (
+                                    {request.type === 'breed' && (
                                       <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100">
                                         Breeding
                                       </Badge>
@@ -430,7 +572,7 @@ const DashboardPage: React.FC = () => {
                                   </div>
                                   <div className="text-sm text-muted-foreground flex items-center gap-2">
                                     <Clock className="h-3 w-3" />
-                                    <span>{new Date(request.date).toLocaleDateString()}</span>
+                                    <span>{new Date(request.createdAt).toLocaleDateString()}</span>
                                   </div>
                                 </div>
                                 <div>
@@ -449,40 +591,46 @@ const DashboardPage: React.FC = () => {
                                       Rejected
                                     </Badge>
                                   )}
+
+                                  {request.status === 'cancelled' && (
+                                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+                                      Cancelled
+                                    </Badge>
+                                  )}
                                 </div>
                               </div>
-                              
+
                               <div className="flex items-center gap-2 mb-3">
                                 <Avatar className="h-6 w-6">
-                                  <AvatarImage src={request.requesterAvatar} alt={request.requesterName} />
-                                  <AvatarFallback>{request.requesterName.charAt(0)}</AvatarFallback>
+                                  <AvatarImage src={request.requester.avatar} alt={request.requester.name} />
+                                  <AvatarFallback>{request.requester.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                <span className="text-sm font-medium">{request.requesterName}</span>
+                                <span className="text-sm font-medium">{request.requester.name}</span>
                               </div>
-                              
+
                               <p className="text-sm text-muted-foreground mb-4">
                                 {request.message}
                               </p>
-                              
+
                               {request.status === 'pending' && (
                                 <div className="flex gap-2 justify-end">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="text-destructive" 
-                                    onClick={() => handleRequestAction(request.id, 'reject')}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-destructive"
+                                    onClick={() => handleRequestAction(request._id, 'rejected')}
                                   >
                                     <X className="h-4 w-4 mr-1" /> Reject
                                   </Button>
-                                  <Button 
-                                    size="sm" 
-                                    onClick={() => handleRequestAction(request.id, 'approve')}
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleRequestAction(request._id, 'approved')}
                                   >
                                     <Check className="h-4 w-4 mr-1" /> Approve
                                   </Button>
                                 </div>
                               )}
-                              
+
                               {request.status === 'approved' && (
                                 <div className="flex justify-end">
                                   <Button size="sm">
@@ -494,49 +642,180 @@ const DashboardPage: React.FC = () => {
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
+                    ))
+                      :
+                      (
+                        <Card className="bg-muted/40">
+                          <CardContent className="flex flex-col items-center justify-center py-12">
+                            <div className="rounded-full bg-primary/10 p-3 mb-4">
+                              <Heart className="h-8 w-8 text-primary" />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-2">No Requests Yet</h3>
+                            <p className="text-muted-foreground text-center mb-6">
+                              No requests found.
+                            </p>
+                            <Link href="/pets">
+                              <Button>
+                                Browse Pets
+                              </Button>
+                            </Link>
+                          </CardContent>
+                        </Card>
+                      )
+
+
+                    }
                   </TabsContent>
-                  
+
                   <TabsContent value="sent">
-                    <Card className="bg-muted/40">
-                      <CardContent className="flex flex-col items-center justify-center py-12">
-                        <div className="rounded-full bg-primary/10 p-3 mb-4">
-                          <Inbox className="h-8 w-8 text-primary" />
-                        </div>
-                        <h3 className="text-xl font-semibold mb-2">No Sent Requests</h3>
-                        <p className="text-muted-foreground text-center mb-6">
-                          You haven't sent any requests for pets yet.
-                        </p>
-                        <Link href="/pets">
-                          <Button>
-                            Browse Available Pets
-                          </Button>
-                        </Link>
-                      </CardContent>
-                    </Card>
+                    {petSentReequests && petSentReequests.length > 0 ?
+
+                      petSentReequests.map((request: any, index: number) => {
+                        return (
+                          <Card key={request._id}>
+                            <CardContent className="p-4 sm:p-6">
+                              <div className="flex flex-col sm:flex-row gap-4">
+                                <div className="sm:w-20 sm:h-20 w-full h-32 flex-shrink-0">
+                                  <img
+                                    src={request.pet.images[0]}
+                                    alt={request.pet.name}
+                                    className="w-full h-full object-cover rounded-md"
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <h3 className="font-semibold">{request.pet.name}</h3>
+                                        {request.type === 'adopt' && (
+                                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                                            Adoption
+                                          </Badge>
+                                        )}
+                                        {request.type === 'buy' && (
+                                          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+                                            Purchase
+                                          </Badge>
+                                        )}
+                                        {request.type === 'breed' && (
+                                          <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100">
+                                            Breeding
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                        <Clock className="h-3 w-3" />
+                                        <span>{new Date(request.createdAt).toLocaleDateString()}</span>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      {request.status === 'pending' && (
+                                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400">
+                                          Pending
+                                        </Badge>
+                                      )}
+                                      {request.status === 'approved' && (
+                                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400">
+                                          Approved
+                                        </Badge>
+                                      )}
+                                      {request.status === 'rejected' && (
+                                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+                                          Rejected
+                                        </Badge>
+                                      )}
+                                      {request.status === 'cancelled' && (
+                                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+                                          Cancelled
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <Avatar className="h-6 w-6">
+                                      <AvatarImage src={request.owner.avatar} alt={request.owner.name} />
+                                      <AvatarFallback>{request.owner.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm font-medium">To: {request.owner.name}</span>
+                                  </div>
+
+                                  <p className="text-sm text-muted-foreground mb-4">
+                                    {request.message}
+                                  </p>
+
+                                  <div className="flex justify-end gap-2">
+                                    {request.status === 'pending' && (
+                                      <Button variant="outline" size="sm">
+                                        <MessageSquare className="h-4 w-4 mr-1" /> Follow Up
+                                      </Button>
+                                    )}
+
+                                    {request.status === 'approved' && (
+                                      <Button size="sm">
+                                        <MessageSquare className="h-4 w-4 mr-1" /> Contact Owner
+                                      </Button>
+                                    )}
+
+                                    {request.status === 'rejected' && (
+                                      <span className="text-sm text-muted-foreground">Request was declined</span>
+                                    )}
+
+                                    <Button variant="outline" size="sm" asChild>
+                                      <Link href={`/pets/${request.pet._id}`}>View Pet</Link>
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )
+                      })
+                      :
+
+                      <Card className="bg-muted/40">
+                        <CardContent className="flex flex-col items-center justify-center py-12">
+                          <div className="rounded-full bg-primary/10 p-3 mb-4">
+                            <Inbox className="h-8 w-8 text-primary" />
+                          </div>
+                          <h3 className="text-xl font-semibold mb-2">No Sent Requests</h3>
+                          <p className="text-muted-foreground text-center mb-6">
+                            You haven't sent any requests for pets yet.
+                          </p>
+                          <Link href="/pets">
+                            <Button>
+                              Browse Available Pets
+                            </Button>
+                          </Link>
+                        </CardContent>
+                      </Card>
+
+                    }
+
+
                   </TabsContent>
                 </Tabs>
               </div>
             )}
-            
+
             {/* Favorites Tab */}
             {activeTab === 'favorites' && (
               <div>
                 <h1 className="text-2xl font-bold mb-6">Favorite Pets</h1>
-                
+
                 {favoritePets && favoritePets.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {favoritePets.map((pet:any) => (
+                    {favoritePets.map((pet: any) => (
                       <Card key={pet?.pet._id} className="overflow-hidden">
                         <div className="aspect-video relative">
-                          <img 
-                            src={pet?.pet.images[0]} 
-                            alt={pet?.pet.name} 
+                          <img
+                            src={pet?.pet.images[0]}
+                            alt={pet?.pet.name}
                             className="w-full h-full object-cover"
                           />
-                          <Button 
-                            variant="secondary" 
-                            size="icon" 
+                          <Button
+                            variant="secondary"
+                            size="icon"
                             className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 text-foreground hover:bg-white backdrop-blur"
                             onClick={() => {
 
@@ -609,12 +888,12 @@ const DashboardPage: React.FC = () => {
                 )}
               </div>
             )}
-            
+
             {/* Messages Tab */}
             {activeTab === 'messages' && (
               <div>
                 <h1 className="text-2xl font-bold mb-6">Messages</h1>
-                
+
                 <Card>
                   <CardHeader>
                     <CardTitle>Your Conversations</CardTitle>
@@ -625,7 +904,7 @@ const DashboardPage: React.FC = () => {
                   <CardContent>
                     <div className="space-y-4">
                       {mockUsers.slice(1, 4).map((user, index) => (
-                        <div 
+                        <div
                           key={user.id}
                           className="flex items-center justify-between p-3 hover:bg-secondary rounded-lg cursor-pointer transition-colors"
                         >
@@ -637,17 +916,17 @@ const DashboardPage: React.FC = () => {
                             <div>
                               <h3 className="font-medium">{user.name}</h3>
                               <p className="text-sm text-muted-foreground line-clamp-1">
-                                {index === 0 ? "Yes, the cat is still available for adoption!" : 
-                                 index === 1 ? "When can I come see the puppy?" : 
-                                 "Thanks for the information about the vaccination."}
+                                {index === 0 ? "Yes, the cat is still available for adoption!" :
+                                  index === 1 ? "When can I come see the puppy?" :
+                                    "Thanks for the information about the vaccination."}
                               </p>
                             </div>
                           </div>
                           <div className="flex flex-col items-end">
                             <span className="text-xs text-muted-foreground">
-                              {index === 0 ? "10 min ago" : 
-                               index === 1 ? "1 hour ago" : 
-                               "Yesterday"}
+                              {index === 0 ? "10 min ago" :
+                                index === 1 ? "1 hour ago" :
+                                  "Yesterday"}
                             </span>
                             {index === 0 && (
                               <Badge className="mt-1">New</Badge>
@@ -666,12 +945,12 @@ const DashboardPage: React.FC = () => {
                 </Card>
               </div>
             )}
-            
+
             {/* Settings Tab */}
             {activeTab === 'settings' && (
               <div>
                 <h1 className="text-2xl font-bold mb-6">Account Settings</h1>
-                
+
                 <div className="space-y-6">
                   <Card>
                     <CardHeader>
@@ -687,36 +966,38 @@ const DashboardPage: React.FC = () => {
                       <div className="grid gap-4">
                         <div className="grid grid-cols-1 md:grid-cols-[150px,1fr] gap-2 items-center">
                           <label className="text-sm font-medium">Name</label>
-                          <Input placeholder="Your name" defaultValue={currentUser?.name} />
+                          <Input name='name' placeholder="Your name" value={formData?.name} onChange={handleChange} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-[150px,1fr] gap-2 items-center">
                           <label className="text-sm font-medium">Email</label>
-                          <Input placeholder="Your email" defaultValue={currentUser?.email} />
+                          <Input name='email' placeholder="Your email" value={formData?.email} onChange={handleChange} disabled />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-[150px,1fr] gap-2 items-start">
                           <label className="text-sm font-medium">Bio</label>
-                          <textarea 
+                          <textarea
                             className="min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                             placeholder="Write a short bio..."
-                            defaultValue={currentUser?.bio}
+                            name='bio'
+                            value={formData?.bio}
+                            onChange={handleChange}
                           ></textarea>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-[150px,1fr] gap-2 items-center">
                           <label className="text-sm font-medium">Phone</label>
-                          <Input placeholder="Your phone number" defaultValue={currentUser?.phone} />
+                          <Input placeholder="Your phone number" name='phone' type='number' value={formData?.phone} onChange={handleChange} />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-[150px,1fr] gap-2 items-center">
+                        {/* <div className="grid grid-cols-1 md:grid-cols-[150px,1fr] gap-2 items-center">
                           <label className="text-sm font-medium">City</label>
-                          <Input placeholder="Your city" defaultValue={currentUser?.city} />
-                        </div>
+                          <Input placeholder="Your city" value={formData?.city} />
+                        </div> */}
                       </div>
                     </CardContent>
                     <CardFooter className="flex justify-end gap-2">
                       <Button variant="outline">Cancel</Button>
-                      <Button>Save Changes</Button>
+                      <Button onClick={saveCurrentUserProfile}>Save Changes</Button>
                     </CardFooter>
                   </Card>
-                  
+
                   <Card>
                     <CardHeader>
                       <CardTitle>Password</CardTitle>
@@ -728,24 +1009,24 @@ const DashboardPage: React.FC = () => {
                       <div className="grid gap-4">
                         <div className="grid grid-cols-1 md:grid-cols-[180px,1fr] gap-2 items-center">
                           <label className="text-sm font-medium">Current Password</label>
-                          <Input type="password" placeholder="Your current password" />
+                          <Input name='currentPassword' value={passwordFields.currentPassword} onChange={handlePasswordChange} type="password" placeholder="Your current password" />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-[180px,1fr] gap-2 items-center">
                           <label className="text-sm font-medium">New Password</label>
-                          <Input type="password" placeholder="Your new password" />
+                          <Input name='newPassword' value={passwordFields.newPassword} onChange={handlePasswordChange} type="password" placeholder="Your new password" />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-[180px,1fr] gap-2 items-center">
                           <label className="text-sm font-medium">Confirm New Password</label>
-                          <Input type="password" placeholder="Confirm your new password" />
+                          <Input name='confirmPassword' value={passwordFields.confirmPassword} onChange={handlePasswordChange} type="password" placeholder="Confirm your new password" />
                         </div>
                       </div>
                     </CardContent>
                     <CardFooter className="flex justify-end gap-2">
                       <Button variant="outline">Cancel</Button>
-                      <Button>Update Password</Button>
+                      <Button onClick={updatePassword}>Update Password</Button>
                     </CardFooter>
                   </Card>
-                  
+
                   <Card>
                     <CardHeader>
                       <CardTitle>Notification Settings</CardTitle>
@@ -762,7 +1043,7 @@ const DashboardPage: React.FC = () => {
                               Receive email notifications about your account activity.
                             </p>
                           </div>
-                          <Switch checked={true} />
+                          <Switch checked={notificationFields.email} onChange={() => handleSettingsToggle("email")} />
                         </div>
                         <Separator />
                         <div className="flex items-center justify-between">
@@ -772,7 +1053,7 @@ const DashboardPage: React.FC = () => {
                               Get notified when you receive a new message.
                             </p>
                           </div>
-                          <Switch checked={true} />
+                          <Switch checked={notificationFields.messages} onChange={() => handleSettingsToggle("messages")} />
                         </div>
                         <Separator />
                         <div className="flex items-center justify-between">
@@ -782,7 +1063,7 @@ const DashboardPage: React.FC = () => {
                               Receive alerts for adoption, purchase, or breeding requests.
                             </p>
                           </div>
-                          <Switch checked={true} />
+                          <Switch checked={notificationFields.petRequests} onChange={() => handleSettingsToggle("petRequests")} />
                         </div>
                         <Separator />
                         <div className="flex items-center justify-between">
@@ -792,17 +1073,17 @@ const DashboardPage: React.FC = () => {
                               Receive promotional content and updates about our services.
                             </p>
                           </div>
-                          <Switch checked={false} />
+                          <Switch checked={notificationFields.marketing} onChange={() => handleSettingsToggle("marketing")} />
                         </div>
                       </div>
                     </CardContent>
                     <CardFooter className="flex justify-end gap-2">
-                      <Button variant="outline">Reset to Defaults</Button>
-                      <Button>Save Preferences</Button>
+                      <Button variant="outline" onClick={() => saveCurrentUserNotification('default')}>Reset to Defaults</Button>
+                      <Button onClick={() => saveCurrentUserNotification('save')}>Save Preferences</Button>
                     </CardFooter>
                   </Card>
-                  
-                  <Card className="border-destructive">
+
+                  {/* <Card className="border-destructive">
                     <CardHeader>
                       <CardTitle className="text-destructive">Danger Zone</CardTitle>
                       <CardDescription>
@@ -836,7 +1117,7 @@ const DashboardPage: React.FC = () => {
                         </div>
                       </div>
                     </CardContent>
-                  </Card>
+                  </Card> */}
                 </div>
               </div>
             )}
@@ -861,19 +1142,21 @@ const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLI
 Input.displayName = "Input";
 
 const Switch = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
-  ({ className, ...props }, ref) => {
+  ({ checked, onChange, ...props }, ref) => {
     return (
-      <div className="relative inline-flex items-center cursor-pointer">
+      <label className="relative inline-flex items-center cursor-pointer">
         <input
           type="checkbox"
-          className="sr-only"
+          className="sr-only peer"
+          checked={checked}
+          onChange={onChange}
           ref={ref}
           {...props}
         />
-        <div
-          className={`w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary`}
-        ></div>
-      </div>
+        <div className="w-11 h-6 bg-gray-200 peer-checked:bg-primary rounded-full transition-colors relative">
+          <div className={`absolute top-[2px] ${checked ? 'right-[2px]' : 'left-[2px]'} h-5 w-5 bg-white border border-gray-300 rounded-full transition-transform duration-200 `} />
+        </div>
+      </label>
     );
   }
 );

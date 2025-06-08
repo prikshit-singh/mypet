@@ -24,9 +24,6 @@ export const createPet = async (payload: any) => {
   }
 
   return res.json();
- if (!token) {
-    throw new Error('No token found');
-  }
 }
 
 export const updatePet = async ({ id, payload }: { id: string; payload: any }) => {
@@ -52,9 +49,7 @@ export const updatePet = async ({ id, payload }: { id: string; payload: any }) =
   }
 
   return res.json();
- if (!token) {
-    throw new Error('No token found');
-  }
+ 
 }
 
 export const getAllPets = async () => {
@@ -226,7 +221,7 @@ export const getUserSinglePet = async (id: string) => {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-     Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`
     },
   });
 
@@ -236,6 +231,90 @@ export const getUserSinglePet = async (id: string) => {
   }
   const petsData = await res.json()
   return petsData?.pet;
+}
+
+
+export const sendRequest = async (payload: any) => {
+  const token = Cookies.get('token');
+
+  if (!token) {
+    throw new Error('No token found');
+  }
+  console.log(`${API_BASE}/request/send`, payload)
+  const res = await fetch(`${API_BASE}/request/send`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json', 
+    },
+    body:JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Signup failed');
+  }
+  return res.json();
+}
+
+export const updateRequest = async (payload: any) => {
+  const token = Cookies.get('token');
+
+  if (!token) {
+    throw new Error('No token found');
+  }
+  console.log(`${API_BASE}/request/update`, payload)
+  const res = await fetch(`${API_BASE}/request/update`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json', 
+    },
+    body:JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Signup failed');
+  }
+  return res.json();
+}
+
+
+export const getSentRequest = async () => {
+  const token = Cookies.get('token');
+  if (!token) {
+    throw new Error('No token found');
+  }
+  const res = await fetch(`${API_BASE}/request/sent`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Signup failed');
+  }
+  const data = await res.json()
+  return data?.requests || [];
+}
+
+export const getReceivedRequest = async () => {
+  const token = Cookies.get('token');
+  if (!token) {
+    throw new Error('No token found');
+  }
+  const res = await fetch(`${API_BASE}/request/received`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Signup failed');
+  }
+  const data = await res.json()
+  return data?.requests || [];
 }
 
 

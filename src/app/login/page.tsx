@@ -1,7 +1,7 @@
 'use client';
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import {  useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -42,7 +42,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import Layout from '@/components/layout/Layout';
 import { toast } from '@/hooks/use-toast';
-import { User, UserCredentials,RegisterData } from '@/types/user';
+import { User, UserCredentials, RegisterData } from '@/types/user';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { loginService, signupService, getCurrentUserService } from '@/services/authApi';
 import { useAuth } from '@/contexts/AuthContext';
@@ -79,42 +79,42 @@ const LoginPage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-  const [tabValue,setTabValue] = useState('login')
-  const { login,user,loading } = useAuth();
+  const [tabValue, setTabValue] = useState('login')
+  const { login, user, loading } = useAuth();
 
   const router = useRouter()
-  useEffect(()=>{
-    if(!loading && user){
+  useEffect(() => {
+    if (!loading && user) {
       router.push('/')
     }
-  },[loading,user])
-    // Login form
-    const loginForm = useForm<LoginFormValues>({
-      resolver: zodResolver(loginSchema),
-      defaultValues: {
-        email: "",
-        password: "",
-        remember: false,
-      },
-    });
-  
-    // Register form
-    const registerForm = useForm<RegisterFormValues>({
-      resolver: zodResolver(registerSchema),
-      defaultValues: {
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        role: "individual",
-        terms: false,
-      },
-    });
+  }, [loading, user])
+  // Login form
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      remember: false,
+    },
+  });
+
+  // Register form
+  const registerForm = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      role: "individual",
+      terms: false,
+    },
+  });
 
   const RegisterMutation = useMutation<User, Error, RegisterData>(
     {
       mutationFn: signupService,
-      onSuccess: async(user: any) => {
+      onSuccess: async (user: any) => {
         toast({
           title: 'Registration successful',
         });
@@ -130,29 +130,13 @@ const LoginPage: React.FC = () => {
       },
     }
   );
-  
+
   // Handle login form submission
   const onLoginSubmit = async (values: LoginFormValues) => {
     try {
       setIsLoggingIn(true);
-      
-      // Call login service with properly typed values
-      
-      // Use context login instead of direct service call
       await login(values.email, values.password);
-      
-      // Show success toast
-      // toast({
-      //   title: "Login successful",
-      //   description: "Welcome back!",
-      // });
-      
-      // Check if user needs onboarding
-      // if (authService.needsOnboarding()) {
-      //   router.push("/onboarding");
-      // } else {
-      //   router.push("/dashboard");
-      // }
+
     } catch (error) {
       toast({
         title: "Login failed",
@@ -168,7 +152,7 @@ const LoginPage: React.FC = () => {
   const onRegisterSubmit = async (values: RegisterFormValues) => {
     try {
       setIsRegistering(true);
-      
+
       // Call register service with properly typed values
       const registerData: RegisterData = {
         name: values.name,
@@ -177,9 +161,9 @@ const LoginPage: React.FC = () => {
         confirmPassword: values.confirmPassword,
         role: values.role
       };
-      
+
       RegisterMutation.mutate(registerData);
-    
+
     } catch (error) {
       toast({
         title: "Registration failed",
@@ -202,7 +186,7 @@ const LoginPage: React.FC = () => {
   // Set test credentials
   const setTestCredentials = (type: 'individual' | 'pet_shop' | 'shelter') => {
     let email = "";
-    
+
     switch (type) {
       case 'individual':
         email = "user@example.com";
@@ -216,7 +200,7 @@ const LoginPage: React.FC = () => {
       default:
         email = "user@example.com";
     }
-    
+
     loginForm.setValue("email", email);
     loginForm.setValue("password", "password123");
   };
@@ -228,10 +212,10 @@ const LoginPage: React.FC = () => {
         <div className="max-w-md mx-auto py-8">
           <Tabs value={tabValue} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login" onClick={()=>setTabValue('login')} id="login-tab">Login</TabsTrigger>
-              <TabsTrigger value="register" onClick={()=>setTabValue('register')} id="register-tab">Register</TabsTrigger>
+              <TabsTrigger value="login" onClick={() => setTabValue('login')} id="login-tab">Login</TabsTrigger>
+              <TabsTrigger value="register" onClick={() => setTabValue('register')} id="register-tab">Register</TabsTrigger>
             </TabsList>
-            
+
             {/* Login Form */}
             <TabsContent value="login">
               <Card>
@@ -257,7 +241,7 @@ const LoginPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={loginForm.control}
                         name="password"
@@ -266,10 +250,10 @@ const LoginPage: React.FC = () => {
                             <FormLabel>Password</FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <Input 
-                                  placeholder="Enter your password" 
-                                  type={showPassword ? "text" : "password"} 
-                                  {...field} 
+                                <Input
+                                  placeholder="Enter your password"
+                                  type={showPassword ? "text" : "password"}
+                                  {...field}
                                 />
                                 <Button
                                   type="button"
@@ -278,8 +262,8 @@ const LoginPage: React.FC = () => {
                                   className="absolute right-0 top-0 h-full px-3"
                                   onClick={togglePasswordVisibility}
                                 >
-                                  {showPassword ? 
-                                    <EyeOff className="h-4 w-4 text-muted-foreground" /> : 
+                                  {showPassword ?
+                                    <EyeOff className="h-4 w-4 text-muted-foreground" /> :
                                     <Eye className="h-4 w-4 text-muted-foreground" />
                                   }
                                 </Button>
@@ -289,7 +273,7 @@ const LoginPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <Checkbox id="remember" {...loginForm.register("remember")} />
@@ -299,7 +283,7 @@ const LoginPage: React.FC = () => {
                           Forgot password?
                         </Link>
                       </div>
-                      
+
                       <Button type="submit" className="w-full" disabled={isLoggingIn}>
                         {isLoggingIn ? (
                           <>
@@ -312,29 +296,29 @@ const LoginPage: React.FC = () => {
                       </Button>
                     </form>
                   </Form>
-                  
-                  <div className="mt-4">
+
+                  {/* <div className="mt-4">
                     <div className="text-sm text-muted-foreground mb-2">Test Accounts:</div>
                     <div className="flex flex-wrap gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setTestCredentials('individual')}
                         className="text-xs"
                       >
                         User
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setTestCredentials('pet_shop')}
                         className="text-xs"
                       >
                         Pet Shop
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setTestCredentials('shelter')}
                         className="text-xs"
                       >
@@ -344,8 +328,8 @@ const LoginPage: React.FC = () => {
                     <div className="text-xs text-muted-foreground mt-1">
                       Click any option to fill in test credentials
                     </div>
-                  </div>
-                  
+                  </div> */}
+
                   <div className="mt-6">
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
@@ -357,7 +341,7 @@ const LoginPage: React.FC = () => {
                         </span>
                       </div>
                     </div>
-                    
+
                     <div className="flex gap-2 mt-4">
                       <Button variant="outline" className="w-full">
                         <Facebook className="mr-2 h-4 w-4" />
@@ -380,7 +364,7 @@ const LoginPage: React.FC = () => {
                 </CardFooter>
               </Card>
             </TabsContent>
-            
+
             {/* Register Form */}
             <TabsContent value="register">
               <Card>
@@ -406,7 +390,7 @@ const LoginPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={registerForm.control}
                         name="email"
@@ -420,7 +404,7 @@ const LoginPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={registerForm.control}
                         name="password"
@@ -429,10 +413,10 @@ const LoginPage: React.FC = () => {
                             <FormLabel>Password</FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <Input 
-                                  placeholder="Create a password" 
-                                  type={showPassword ? "text" : "password"} 
-                                  {...field} 
+                                <Input
+                                  placeholder="Create a password"
+                                  type={showPassword ? "text" : "password"}
+                                  {...field}
                                 />
                                 <Button
                                   type="button"
@@ -441,8 +425,8 @@ const LoginPage: React.FC = () => {
                                   className="absolute right-0 top-0 h-full px-3"
                                   onClick={togglePasswordVisibility}
                                 >
-                                  {showPassword ? 
-                                    <EyeOff className="h-4 w-4 text-muted-foreground" /> : 
+                                  {showPassword ?
+                                    <EyeOff className="h-4 w-4 text-muted-foreground" /> :
                                     <Eye className="h-4 w-4 text-muted-foreground" />
                                   }
                                 </Button>
@@ -452,7 +436,7 @@ const LoginPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={registerForm.control}
                         name="confirmPassword"
@@ -461,10 +445,10 @@ const LoginPage: React.FC = () => {
                             <FormLabel>Confirm Password</FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <Input 
-                                  placeholder="Confirm your password" 
-                                  type={showConfirmPassword ? "text" : "password"} 
-                                  {...field} 
+                                <Input
+                                  placeholder="Confirm your password"
+                                  type={showConfirmPassword ? "text" : "password"}
+                                  {...field}
                                 />
                                 <Button
                                   type="button"
@@ -473,8 +457,8 @@ const LoginPage: React.FC = () => {
                                   className="absolute right-0 top-0 h-full px-3"
                                   onClick={toggleConfirmPasswordVisibility}
                                 >
-                                  {showConfirmPassword ? 
-                                    <EyeOff className="h-4 w-4 text-muted-foreground" /> : 
+                                  {showConfirmPassword ?
+                                    <EyeOff className="h-4 w-4 text-muted-foreground" /> :
                                     <Eye className="h-4 w-4 text-muted-foreground" />
                                   }
                                 </Button>
@@ -484,7 +468,7 @@ const LoginPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={registerForm.control}
                         name="role"
@@ -507,7 +491,7 @@ const LoginPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={registerForm.control}
                         name="terms"
@@ -535,7 +519,7 @@ const LoginPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <Button type="submit" className="w-full" disabled={isRegistering}>
                         {isRegistering ? (
                           <>
@@ -548,7 +532,7 @@ const LoginPage: React.FC = () => {
                       </Button>
                     </form>
                   </Form>
-                  
+
                   <div className="mt-6">
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
@@ -560,7 +544,7 @@ const LoginPage: React.FC = () => {
                         </span>
                       </div>
                     </div>
-                    
+
                     <div className="flex gap-2 mt-4">
                       <Button variant="outline" className="w-full">
                         <Facebook className="mr-2 h-4 w-4" />

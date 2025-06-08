@@ -3,7 +3,8 @@ import {   User } from '@/types/user';
 import { signupPayload ,loginPayload} from '@/types/apiPayloadTypes';
 import { RegisterData } from '@/types/user';
 import Cookies from 'js-cookie';
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'https://gitgurus.com/api';
+// const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'https://gitgurus.com/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
 /**
  * Register a new user
@@ -130,5 +131,68 @@ export const updateAddressById = async(payload:any)=>{
     throw new Error(error.message || 'Address not updated');
   }
 
+  return res.json();
+}
+
+export const updateCurrentUser = async(payload:any)=>{
+  const token = Cookies.get('token');
+
+  if (!token) {
+    throw new Error('No token found');
+  }
+
+  console.log('payload',payload)
+
+  const res = await fetch(`${API_BASE}/auth/update-me`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Address not updated');
+  }
+  return res.json();
+}
+
+export const updateCurrentUserPassword = async(payload:any)=>{
+  const token = Cookies.get('token');
+
+  if (!token) {
+    throw new Error('No token found');
+  }
+
+  const res = await fetch(`${API_BASE}/auth/update-password`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Address not updated');
+  }
+  return res.json();
+}
+
+
+export const updateCurrentUserProfileAvatar = async(payload:any)=>{
+  const token = Cookies.get('token');
+
+  if (!token) {
+    throw new Error('No token found');
+  }
+
+  const res = await fetch(`${API_BASE}/auth/update-avatar`, {
+    method: 'PUT',
+    headers: {  Authorization: `Bearer ${token}`, },
+    body:payload,
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Address not updated');
+  }
   return res.json();
 }
