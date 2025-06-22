@@ -23,7 +23,7 @@ export const adoptionService = {
     const newRequest: AdoptionRequest = {
       id: `req_${Date.now()}`,
       petId,
-      userId: user.id,
+      userId: user._id as string,
       userName: user.name,
       userAvatar: user.avatar,
       status: 'pending',
@@ -79,6 +79,6 @@ export const adoptionService = {
     
     const user: User = JSON.parse(userString);
     
-    return adoptionRequests.filter(req => req.userId === user.id);
+    return adoptionRequests.filter(req => req.userId === user._id);
   }
 };

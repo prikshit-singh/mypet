@@ -73,7 +73,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = () => {
-    // authService.logout();
     Cookies.remove('token');
     setUser(null);
   };

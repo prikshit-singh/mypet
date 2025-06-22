@@ -16,7 +16,6 @@ import { Loader2, Heart } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { adoptionService } from '@/services/adoptionService';
 import { Pet } from '@/types/pet';
-import { authService } from '@/services/authService';
 import { useRouter } from 'next/navigation';
 import { sendRequest } from '@/services/petServices';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
