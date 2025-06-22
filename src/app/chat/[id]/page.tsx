@@ -45,7 +45,7 @@ const ChatPage: React.FC = () => {
     }
   }, [data]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async(e: React.FormEvent) => {
     e.preventDefault();
 
     if (!message.trim() || !chat?.participants) return;
@@ -68,7 +68,9 @@ const ChatPage: React.FC = () => {
     }
     console.log('newMessage', newMessage)
     sendMessage(newMessage);
+    await queryClient.invalidateQueries({ queryKey: ['petList'] });
     setMessage('');
+
     toast({
       title: 'Message Sent',
       description: `Your message has been sent.`,
@@ -77,8 +79,6 @@ const ChatPage: React.FC = () => {
 
   if (isLoading) return <Layout>Loading chat...</Layout>;
   if (isError || !chat) return <Layout>Error loading chat</Layout>;
-
-  console.log(chat)
 
   return (
     <Layout>
