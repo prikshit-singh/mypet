@@ -49,9 +49,12 @@ import RatingModal from '@/components/ratings/RatingModal';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { getSinglePets, toggolFavouritePet, ratePetOwner } from '@/services/petServices';
 import AdoptionRequestDialog from '@/components/adoption/AdoptionRequestDialog';
+import { useChatSocket } from '@/hooks/useChatSocket';
+import { useAuth } from '@/contexts/AuthContext';
 
 const PetDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { user: currentUser } = useAuth();
   const router = useRouter()
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<'adopt' | 'buy' | 'breed'>('adopt');
@@ -88,7 +91,6 @@ const PetDetailsPage: React.FC = () => {
   });
 
 
-  console.log(pet)
   if (!pet) {
     return (
       <Layout>
@@ -545,6 +547,52 @@ const PetDetailsPage: React.FC = () => {
         </div>
       </div>
 
+      {currentUser &&
+        <CahtInquiry
+          isContactDialogOpen={isContactDialogOpen}
+          setIsContactDialogOpen={setIsContactDialogOpen}
+          pet={pet}
+          actionType={actionType}
+          userId={currentUser._id}
+        />
+      }
+
+
+
+
+
+      <RatingModal
+        isOpen={isRatingModalOpen}
+        onClose={() => setIsRatingModalOpen(false)}
+        targetName={pet.owner.name}
+        targetType="owner"
+        targetId={pet.owner._id}
+      />
+    </Layout>
+  );
+};
+
+export default PetDetailsPage;
+
+
+const CahtInquiry = ({ isContactDialogOpen, setIsContactDialogOpen, pet, actionType, userId }: any) => {
+  const { messages, sendMessage } = useChatSocket(userId);
+  const [text, setText] = useState('');
+
+  const handleSubmitRequest = () => {
+    
+    sendMessage({
+      senderId: userId,
+      receiverId: pet.owner._id,
+      petId: pet._id,
+      text: text,
+    })
+    setText('')
+    setIsContactDialogOpen(false);
+    // router.push(`/chat/${pet._id}`);
+  };
+  return (
+    <>
       <Dialog open={isContactDialogOpen} onOpenChange={setIsContactDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -562,6 +610,8 @@ const PetDetailsPage: React.FC = () => {
             <textarea
               className="w-full p-3 rounded-md border border-input text-sm"
               rows={5}
+              value={text}
+              onChange={(e) => { setText(e.target.value) }}
               placeholder={`Hello, I'm interested in ${actionType === 'adopt' ? 'adopting' : actionType === 'buy' ? 'purchasing' : 'breeding with'} ${pet.name}. I'd like to learn more and discuss next steps.`}
             ></textarea>
             <div className="flex items-start space-x-2">
@@ -580,18 +630,6 @@ const PetDetailsPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-
-
-      <RatingModal
-        isOpen={isRatingModalOpen}
-        onClose={() => setIsRatingModalOpen(false)}
-        targetName={pet.owner.name}
-        targetType="owner"
-        targetId={pet.owner._id}
-      />
-    </Layout>
-  );
-};
-
-export default PetDetailsPage;
+    </>
+  )
+}

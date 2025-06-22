@@ -1,197 +1,169 @@
-'use client'
+'use client';
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useRouter } from 'next/navigation';
-import { Send, ArrowLeft, Phone, Video, MoreVertical, User } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { Send, ArrowLeft, Phone, Video, MoreVertical } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import Layout from '@/components/layout/Layout';
-import { mockPets } from '@/data/mock-data';
-import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { getSingleChat } from '@/services/chatServices';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useChatSocket } from '@/hooks/useChatSocket';
+import { cn } from '@/lib/utils';
 
 interface Message {
-  id: string;
-  senderId: string;
+  _id: string;
+  sender: any;
   text: string;
-  timestamp: Date;
-  isRead: boolean;
+  createdAt: string;
 }
 
 const ChatPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter()
+  const router = useRouter();
   const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
+  const queryClient = useQueryClient();
+  const { messages: newMessage, sendMessage } = useChatSocket(user?._id as string);
 
-  // Find the pet by ID
-  const pet = mockPets.find((p: any) => p.id === id);
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['getSingleChat', id],
+    queryFn: () => getSingleChat(id),
+    refetchOnMount: true,
+  });
+
+  const chat = data?.chat;
+  const pet = chat?.pet;
+  const owner = pet?.owner;
 
   useEffect(() => {
-    if (pet) {
-      const ownerId =
-        typeof pet.owner === 'string' ? pet.owner : pet.owner?.id;
-
-      const initialMessages: Message[] = [
-        {
-          id: '1',
-          senderId: ownerId as string,
-          text: `Hello! Thank you for your interest in ${pet.name}. How can I help you?`,
-          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-          isRead: true,
-        },
-      ];
-
-      setMessages(initialMessages);
+    if (data?.messages) {
+      setMessages(data.messages);
     }
-  }, [pet]);
+  }, [data]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!message.trim()) return;
+    if (!message.trim() || !chat?.participants) return;
 
-    // Add user message
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      senderId: user?.id || 'current-user',
+    // Find the receiver (other participant)
+    const receiverId = chat.participants.find(
+      (p: any) => p._id !== user?._id
+    )?._id;
+
+    if (!receiverId) {
+      console.error('Receiver ID not found');
+      return;
+    }
+
+    const newMessage = {
+      senderId: user?._id as string,
+      receiverId,
+      petId: pet._id,
       text: message,
-      timestamp: new Date(),
-      isRead: false
-    };
-
-    setMessages([...messages, newMessage]);
+    }
+    console.log('newMessage', newMessage)
+    sendMessage(newMessage);
     setMessage('');
-
-    // Simulate owner reply after 1 second
-    setTimeout(() => {
-      const owner = pet?.owner;
-      const ownerId = typeof owner === 'string' ? owner : owner?.id;
-      const ownerName = typeof owner === 'string' ? 'Owner' : owner?.name;
-
-      const ownerReply: Message = {
-        id: (Date.now() + 1).toString(),
-        senderId: ownerId || 'owner',
-        text: `Thanks for your message about ${pet?.name}. I'll get back to you with more details soon.`,
-        timestamp: new Date(),
-        isRead: false,
-      };
-
-      setMessages(prevMessages => [...prevMessages, ownerReply]);
-
-      toast({
-        title: "New message",
-        description: `${ownerName} has replied to your message`,
-      });
-    }, 1000);
+    toast({
+      title: 'Message Sent',
+      description: `Your message has been sent.`,
+    });
   };
 
-  if (!pet) {
-    return (
-      <Layout>
-        <div className="container py-12 text-center">
-          <h1 className="text-3xl font-bold mb-4">Chat Not Found</h1>
-          <p className="text-muted-foreground mb-6">The chat you're looking for doesn't exist or has been removed.</p>
-          <Button asChild>
-            <Button onClick={() => router.back()}>Go Back</Button>
-          </Button>
-        </div>
-      </Layout>
-    );
-  }
+  if (isLoading) return <Layout>Loading chat...</Layout>;
+  if (isError || !chat) return <Layout>Error loading chat</Layout>;
+
+  console.log(chat)
 
   return (
     <Layout>
       <div className="container max-w-4xl py-6">
         <div className="border rounded-lg overflow-hidden flex flex-col h-[calc(100vh-250px)]">
-          {/* Chat Header */}
-          {typeof pet.owner !== 'string' && (
+          {/* Header */}
+          {owner && typeof owner !== 'string' && (
             <div className="p-4 border-b bg-card flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={pet?.owner?.avatar} alt={pet?.owner?.name} />
-                  <AvatarFallback>{pet?.owner?.name.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={owner.avatar} alt={owner.name} />
+                  <AvatarFallback>{owner.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-medium">{pet?.owner?.name}</h3>
+                  <h3 className="font-medium">{owner.name}</h3>
                   <p className="text-xs text-muted-foreground">
-                    {pet?.owner?.role === 'individual'
+                    {owner.role === 'individual'
                       ? 'Pet Owner'
-                      : pet?.owner?.role === 'shelter'
+                      : owner.role === 'shelter'
                         ? 'Shelter'
                         : 'Pet Shop'}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" title="Voice Call">
-                  <Phone className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" title="Video Call">
-                  <Video className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" title="More Options">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
+                <Button variant="ghost" size="icon"><Phone className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon"><Video className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
               </div>
             </div>
           )}
 
-
-          {/* Chat Messages */}
+          {/* Messages */}
           <div className="flex-1 p-4 overflow-y-auto bg-muted/10 flex flex-col gap-4">
             <div className="flex justify-center mb-2">
               <span className="text-xs text-muted-foreground bg-background px-2 py-1 rounded-full">
-                Conversation about {pet.name}
+                Conversation about {pet?.name}
               </span>
             </div>
 
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={cn(
-                  "max-w-[80%] rounded-lg p-3",
-                  msg.senderId === user?.id || msg.senderId === 'current-user'
-                    ? "bg-primary text-primary-foreground ml-auto"
-                    : "bg-muted mr-auto"
-                )}
-              >
-                <div className="flex items-start gap-2">
-                  {msg.senderId !== user?.id && msg.senderId !== 'current-user' &&
-                    typeof pet?.owner !== 'string' && (
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={pet?.owner?.avatar} alt={pet?.owner?.name} />
-                        <AvatarFallback>{pet?.owner?.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                    )}
+            {messages.map((msg) => {
+              const isSender = msg.sender === user?._id || msg.sender?._id === user?._id;
+              const senderName = isSender ? user?.name : owner?.name;
+              const senderAvatar = isSender ? user?.avatar : owner?.avatar;
+
+              return (
+                <div
+                  key={msg._id}
+                  className={cn(
+                    "max-w-[80%] rounded-lg p-3 flex",
+                    isSender
+                      ? "bg-primary text-primary-foreground ml-auto flex-row-reverse"
+                      : "bg-muted mr-auto"
+                  )}
+                >
+                  <Avatar className="h-6 w-6 mt-1 mx-2">
+                    <AvatarImage src={senderAvatar} alt={senderName} />
+                    <AvatarFallback>{senderName?.charAt(0)}</AvatarFallback>
+                  </Avatar>
                   <div>
                     <p>{msg.text}</p>
                     <div className="flex justify-end">
                       <span className="text-xs opacity-70 mt-1">
-                        {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(msg.createdAt).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </span>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* Chat Input */}
+          {/* Input */}
           <div className="p-3 border-t bg-card">
             <form onSubmit={handleSendMessage} className="flex gap-2">
               <Input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder={`Message about ${pet.name}...`}
+                placeholder={`Message about ${pet?.name}...`}
                 className="flex-1"
               />
               <Button type="submit" size="icon">

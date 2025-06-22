@@ -22,7 +22,7 @@ import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { createAddress, getAddresses, updateAddressById, updateCurrentUser,updateCurrentUserProfileAvatar } from '@/services/authApi';
+import { createAddress, getAddresses, updateAddressById, updateCurrentUser, updateCurrentUserProfileAvatar } from '@/services/authApi';
 
 interface Address {
   street: string;
@@ -155,7 +155,7 @@ const EditProfilePage = () => {
     }
   );
 
-  
+
   const updateCurrentUserProfileAvatarMutation = useMutation<any, Error, any>(
     {
       mutationFn: updateCurrentUserProfileAvatar,
@@ -220,16 +220,16 @@ const EditProfilePage = () => {
     // });
   };
 
-const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
+  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
 
-  if (!file) return;
+    if (!file) return;
 
-  const formData = new FormData();
-  formData.append('avatar', file);
+    const formData = new FormData();
+    formData.append('avatar', file);
 
-  updateCurrentUserProfileAvatarMutation.mutate(formData);
-};
+    updateCurrentUserProfileAvatarMutation.mutate(formData);
+  };
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -244,6 +244,7 @@ const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const handleButtonClick = () => {
     fileInputRef.current?.click();
   };
+  console.log(user)
   return (
     <Layout>
       <div className="container py-8 space-y-8">

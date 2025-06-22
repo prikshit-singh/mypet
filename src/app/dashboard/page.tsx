@@ -47,9 +47,10 @@ import { mockPets, mockUsers } from '@/data/mock-data';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserPets, getUserFavouritePets, toggolFavouritePet, deleteSinglePets, getSentRequest, getReceivedRequest, updateRequest, } from '@/services/petServices';
 import { updateCurrentUser, updateCurrentUserPassword } from '@/services/authApi';
+import { getAllChats } from '@/services/chatServices';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
-
+import { formatDistanceToNow } from 'date-fns';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 // Mock data for dashboard
 // const currentUser = mockUsers[0]; // Using the first user as the current user
@@ -58,22 +59,17 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 
 const DashboardPage: React.FC = () => {
   const { user: currentUser } = useAuth();
-  console.log('user', currentUser)
-
   const [formData, setFormData] = useState({
     name: currentUser?.name || '',
     email: currentUser?.email || '',
     bio: currentUser?.bio || '',
     phone: currentUser?.phone || '',
   });
-
-
   const [passwordFields, setPasswordFields] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   })
-
 
   const [notificationFields, setNotificationFields] = useState({
     email: true,
@@ -81,7 +77,6 @@ const DashboardPage: React.FC = () => {
     petRequests: true,
     marketing: true,
   })
-
 
   const [activeTab, setActiveTab] = useState('my-pets');
   const queryClient = useQueryClient();
@@ -109,6 +104,13 @@ const DashboardPage: React.FC = () => {
   const { data: userPets, isLoading, isError, refetch } = useQuery({
     queryKey: ['getUserPets'],
     queryFn: getUserPets,
+    enabled: !!Cookies.get('token'),
+    retry: false,
+  });
+
+  const { data: userChats, isLoading: chatIsLoading, isError: chtIsError, refetch: chatRefetch } = useQuery({
+    queryKey: ['getAllChats'],
+    queryFn: getAllChats,
     enabled: !!Cookies.get('token'),
     retry: false,
   });
@@ -312,7 +314,6 @@ const DashboardPage: React.FC = () => {
   }
 
   const updatePassword = () => {
-
     if (passwordFields.newPassword !== passwordFields.confirmPassword) {
       toast({
         title: 'Password not match.',
@@ -321,9 +322,15 @@ const DashboardPage: React.FC = () => {
       });
       return;
     }
-
     updateCurrentUserPasswordMutation.mutate(passwordFields)
   }
+
+
+  function timeAgo(date: string): string {
+    return formatDistanceToNow(new Date(date), { addSuffix: true });
+  }
+
+  console.log('userChats', userChats)
 
   return (
     <Layout>
@@ -903,37 +910,37 @@ const DashboardPage: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {mockUsers.slice(1, 4).map((user, index) => (
-                        <div
-                          key={user.id}
-                          className="flex items-center justify-between p-3 hover:bg-secondary rounded-lg cursor-pointer transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Avatar>
-                              <AvatarImage src={user.avatar} alt={user.name} />
-                              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <h3 className="font-medium">{user.name}</h3>
-                              <p className="text-sm text-muted-foreground line-clamp-1">
-                                {index === 0 ? "Yes, the cat is still available for adoption!" :
-                                  index === 1 ? "When can I come see the puppy?" :
-                                    "Thanks for the information about the vaccination."}
-                              </p>
+                      {userChats && userChats.map((chat: any, index: number) => {
+                        return (
+                          <Link key={chat._id} href={`/chat/${chat._id}`}>
+                            <div
+                              className="flex items-center justify-between p-3 hover:bg-secondary rounded-lg cursor-pointer transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <Avatar>
+                                  <AvatarImage src={chat.participants[0].avatar} alt={chat.participants[0].name} />
+                                  <AvatarFallback>{chat.participants[0].name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <h3 className="font-medium">{chat.participants[0].name}</h3>
+                                  <p className="text-sm text-muted-foreground line-clamp-1">
+                                    {chat.lastMessage.text}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end">
+                                <span className="text-xs text-muted-foreground">
+                                  {timeAgo(chat.lastMessage.createdAt)}
+                                </span>
+                                {index === 0 && (
+                                  <Badge className="mt-1">New</Badge>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <span className="text-xs text-muted-foreground">
-                              {index === 0 ? "10 min ago" :
-                                index === 1 ? "1 hour ago" :
-                                  "Yesterday"}
-                            </span>
-                            {index === 0 && (
-                              <Badge className="mt-1">New</Badge>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                          </Link>
+
+                        )
+                      })}
                     </div>
                   </CardContent>
                   <CardFooter className="justify-center border-t pt-4">
