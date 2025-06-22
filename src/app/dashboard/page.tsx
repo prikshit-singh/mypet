@@ -43,7 +43,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from '@/hooks/use-toast';
 import Layout from '@/components/layout/Layout';
-import { mockPets, mockUsers } from '@/data/mock-data';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserPets, getUserFavouritePets, toggolFavouritePet, deleteSinglePets, getSentRequest, getReceivedRequest, updateRequest, } from '@/services/petServices';
 import { updateCurrentUser, updateCurrentUserPassword } from '@/services/authApi';
@@ -52,9 +51,7 @@ import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-// Mock data for dashboard
-// const currentUser = mockUsers[0]; // Using the first user as the current user
-// const userPets = mockPets.filter(pet => pet.owner._id === currentUser.id);
+
 
 
 const DashboardPage: React.FC = () => {

@@ -1,6 +1,5 @@
 'use client';
 import { PetCard } from '@/components/ui/pet-card';
-import { featuredPets } from '@/data/mock-data';
 import { ArrowRight } from 'lucide-react';
 import { getAllPets } from '@/services/petServices';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';

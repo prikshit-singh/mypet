@@ -47,7 +47,6 @@ import {
   DrawerTrigger
 } from '@/components/ui/drawer';
 import { Search, Filter, X } from 'lucide-react';
-import { featuredPets } from '@/data/mock-data';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Pet } from '@/types/pet';
 import { useSearchParams } from 'next/navigation';
