@@ -91,6 +91,63 @@ export const createAddress = async(payload:any)=>{
   return res.json();
 }
 
+export const sendForgetPasswordLink = async(payload:any)=>{
+
+  console.log(payload,typeof payload)
+  
+  const res = await fetch(`${API_BASE}/auth/send-forget-password-request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Forget Password request failed.');
+  }
+
+  return res.json();
+}
+
+
+export const sendResetPassword = async(payload:any)=>{
+
+  console.log(payload,typeof payload)
+  
+  const res = await fetch(`${API_BASE}/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json',Authorization: `Bearer ${payload.token}` },
+
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Forget Password request failed.');
+  }
+
+  return res.json();
+}
+
+export const verifyAccount = async(payload:any)=>{
+
+  console.log(payload,typeof payload)
+  
+  const res = await fetch(`${API_BASE}/auth/verify-account`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json',Authorization: `Bearer ${payload.token}` },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Forget Password request failed.');
+  }
+
+  return res.json();
+}
+
 export const getAddresses = async(payload:any)=>{
   const token = Cookies.get('token');
 

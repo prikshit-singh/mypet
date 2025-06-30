@@ -279,8 +279,8 @@ const LoginPage: React.FC = () => {
                           <Checkbox id="remember" {...loginForm.register("remember")} />
                           <Label htmlFor="remember">Remember me</Label>
                         </div>
-                        <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                          Forgot password?
+                        <Link href="/forget-password" className="text-sm text-primary hover:underline">
+                          Forget password?
                         </Link>
                       </div>
 
