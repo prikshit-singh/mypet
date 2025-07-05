@@ -16,7 +16,7 @@ const CookiePage: React.FC = () => {
             </p>
             
             <p className="mb-6">
-              This Cookie Policy explains how PawConnect ("we", "our", or "us") uses cookies and similar technologies when you visit our website or use our services. This policy should be read alongside our Privacy Policy, which explains how we use your personal information.
+              This Cookie Policy explains how  ThePetWala ("we", "our", or "us") uses cookies and similar technologies when you visit our website or use our services. This policy should be read alongside our Privacy Policy, which explains how we use your personal information.
             </p>
             
             <Separator className="my-8" />
@@ -81,7 +81,7 @@ const CookiePage: React.FC = () => {
             
             <h2 className="text-2xl font-semibold mb-4 text-foreground">7. Contact Us</h2>
             <p className="mb-6">
-              If you have any questions about our use of cookies, please contact us at privacy@pawconnect.com.
+              If you have any questions about our use of cookies, please contact us at privacy@ ThePetWala.com.
             </p>
           </div>
         </div>

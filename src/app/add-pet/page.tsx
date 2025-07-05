@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MapPin, PawPrint, DollarSign, Heart, Info, Save } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+ 
 import Cookies from 'js-cookie';
 import { Address } from '@/types/user';
 import { Card } from '@/components/ui/card';
@@ -28,7 +28,7 @@ import { createAddress, getAddresses, updateAddressById } from '@/services/authA
 import { createPet } from '@/services/petServices';
 import { Pet } from '@/types/pet';
 type PetPurpose = 'sell' | 'adopt' | 'breed';
-export type PetType = 
+export type PetType =
   | "Dog"
   | "Cat"
   | "Bird"
@@ -80,22 +80,6 @@ const AddPetPage: React.FC = () => {
   const CreateAddressMutation = useMutation<any, Error, Address>(
     {
       mutationFn: createAddress,
-      onSuccess: async (address: any) => {
-
-        console.log(address)
-        await queryClient.invalidateQueries({ queryKey: ['addressList'] });
-        toast({
-          title: 'Address saved successfully',
-        });
-
-      },
-      onError: (err: any) => {
-        toast({
-          title: 'Address Request failed',
-          description: err.message,
-          variant: 'destructive',
-        });
-      },
     }
   );
 
@@ -109,6 +93,22 @@ const AddPetPage: React.FC = () => {
         toast({
           title: 'Pet saved successfully',
         });
+        setPetData({
+          name: '',
+          type: '',
+          breed: '',
+          age: '',
+          gender: 'Male',
+          price: '',
+          description: '',
+          healthInfo: '',
+          vaccinated: false,
+          neutered: false,
+          microchipped: false,
+          breedingExperience: '',
+          careAdvice: '',
+          images: [] as File[]
+        })
         setIsSubmitting(false);
       },
       onError: (err: any) => {
@@ -124,12 +124,12 @@ const AddPetPage: React.FC = () => {
   );
 
   useEffect(() => {
-    if (addressList?.success && addressList?.data.length > 0) {
+    if (!selectedAddressId && (addressList?.success && addressList?.data.length > 0)) {
       const selectedId = addressList?.data.find((addr: any) => addr.isDefault)?._id
       setSelectedAddressId(selectedId)
     }
   }, [addressList])
-  
+
 
   useEffect(() => {
     const token = Cookies.get('token');
@@ -189,8 +189,6 @@ const AddPetPage: React.FC = () => {
     setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
-
-
   const handleAddressTypeChange = (value: 'existing' | 'new') => {
     setAddressType(value);
   };
@@ -200,20 +198,55 @@ const AddPetPage: React.FC = () => {
     setNewAddress(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveAddress = (event: any) => {
-    event.stopPropagation()
-    console.log(newAddress)
-    CreateAddressMutation.mutate({ ...newAddress });
-    // toast({
-    //   title: "Address Saved",
-    //   description: "Your address has been saved successfully",
-    // });
-  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    console.log({...petData,purpose:activeTab,address:selectedAddressId},)
+
+    let addressId = selectedAddressId;
+
+    if (addressType === 'new') {
+      try {
+        const res = await CreateAddressMutation.mutateAsync({ ...newAddress });
+        if (res.status === 201) {
+          addressId = res.data._id;
+          setSelectedAddressId(addressId);
+          setAddressType('existing');
+          await queryClient.invalidateQueries({ queryKey: ['addressList'] });
+          setNewAddress({
+            street: '',
+            city: '',
+            state: '',
+            postalCode: '',
+            isDefault: false
+          })
+          toast({
+            title: 'Address saved successfully',
+          });
+        } else {
+          throw new Error('Failed to create address');
+        }
+      } catch (err: any) {
+        toast({
+          title: 'Address Request Failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    if (!addressId) {
+      toast({
+        title: "Missing Information",
+        description: "Please select an address.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     // Validate form
     if (!petData.name || !petData.type || !petData.breed) {
       toast({
@@ -225,43 +258,42 @@ const AddPetPage: React.FC = () => {
       return;
     }
 
+    if (petData.images.length < 3) {
+      toast({
+        title: "Missing Information",
+        description: "At least three images are required.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     const formData = new FormData();
 
-// Append simple fields
-formData.append('name', petData.name);
-formData.append('type', petData.type as PetType);
-formData.append('purpose', activeTab);
-formData.append('address', selectedAddressId);
-formData.append('breed', petData.breed);
-formData.append('age', petData.age.toString());
-formData.append('gender', petData.gender as 'Male' | 'Female');
-formData.append('price', petData.price.toString());
-formData.append('description', petData.description);
-formData.append('healthInfo', petData.healthInfo);
-formData.append('vaccinated', JSON.stringify(petData.vaccinated));
-formData.append('neutered', JSON.stringify(petData.neutered));
-formData.append('microchipped', JSON.stringify(petData.microchipped));
-formData.append('breedingExperience', petData.breedingExperience);
-formData.append('careAdvice', petData.careAdvice);
+    formData.append('name', petData.name);
+    formData.append('type', petData.type as PetType);
+    formData.append('purpose', activeTab);
+    formData.append('address', addressId);
+    formData.append('breed', petData.breed);
+    formData.append('age', petData.age.toString());
+    formData.append('gender', petData.gender as 'Male' | 'Female');
+    formData.append('price', petData.price.toString());
+    formData.append('description', petData.description);
+    formData.append('healthInfo', petData.healthInfo);
+    formData.append('vaccinated', JSON.stringify(petData.vaccinated));
+    formData.append('neutered', JSON.stringify(petData.neutered));
+    formData.append('microchipped', JSON.stringify(petData.microchipped));
+    formData.append('breedingExperience', petData.breedingExperience);
+    formData.append('careAdvice', petData.careAdvice);
 
-// Append images (multiple files)
-petData.images.forEach((image) => {
-  console.log(image)
-  formData.append('images', image); 
-});
+    petData.images.forEach((image) => {
+      formData.append('images', image);
+    });
 
-    CreatePetMutation.mutate(formData)
-
-    // Simulate API call
-    // setTimeout(() => {
-    //   toast({
-    //     title: "Pet Added Successfully",
-    //     description: `Your pet ${petData.name} has been added for ${activeTab === 'sell' ? 'sale' : activeTab === 'adopt' ? 'adoption' : 'breeding'}.`,
-    //   });
-    //   setIsSubmitting(false);
-    //   router.push('/pets');
-    // }, 1500);
+    // Submit pet form (uncomment once ready)
+    CreatePetMutation.mutate(formData);
   };
+
 
   return (
     <Layout>
@@ -349,7 +381,7 @@ petData.images.forEach((image) => {
                     type='number'
                     value={petData.age}
                     onChange={handleInputChange}
-                    placeholder="e.g., 2 years, 6 months"
+                    placeholder="e.g., 6 months"
                   />
                 </div>
 
@@ -369,7 +401,7 @@ petData.images.forEach((image) => {
 
                 {activeTab === 'sell' && (
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price ($) <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="price">Price (₹) <span className="text-red-500">*</span></Label>
                     <Input
                       id="price"
                       name="price"
@@ -552,14 +584,6 @@ petData.images.forEach((image) => {
                       }} />
                       <Label htmlFor="make-default">Make this my default address</Label>
                     </div>
-                    <Button
-                      onClick={handleSaveAddress}
-                      variant="outline"
-                      className="flex items-center gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      Save Address
-                    </Button>
                   </div>
                 </div>
               )}

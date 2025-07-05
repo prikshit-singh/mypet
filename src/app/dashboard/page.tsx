@@ -43,7 +43,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from '@/hooks/use-toast';
 import Layout from '@/components/layout/Layout';
-import { useAuth } from '@/contexts/AuthContext';
+ 
 import { getUserPets, getUserFavouritePets, toggolFavouritePet, deleteSinglePets, getSentRequest, getReceivedRequest, updateRequest, } from '@/services/petServices';
 import { updateCurrentUser, updateCurrentUserPassword } from '@/services/authApi';
 import { getAllChats } from '@/services/chatServices';
@@ -51,11 +51,13 @@ import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-
-
+import { useUser } from '@/hooks/useUser';
+import { useSearchParams } from 'next/navigation';
 
 const DashboardPage: React.FC = () => {
-  const { user: currentUser } = useAuth();
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'my-pets';
+  const { user: currentUser } = useUser();
   const [formData, setFormData] = useState({
     name: currentUser?.name || '',
     email: currentUser?.email || '',
@@ -75,8 +77,9 @@ const DashboardPage: React.FC = () => {
     marketing: true,
   })
 
-  const [activeTab, setActiveTab] = useState('my-pets');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const queryClient = useQueryClient();
+  const router = useRouter()
 
   useEffect(() => {
     setFormData({
@@ -96,6 +99,12 @@ const DashboardPage: React.FC = () => {
 
     console.log('currentUser?.notification?.messages', currentUser?.notification?.messages)
   }, [currentUser])
+
+   useEffect(() => {
+    if (searchParams.get('tab') && searchParams.get('tab') !== activeTab) {
+      setActiveTab(searchParams.get('tab')!);
+    }
+  }, [searchParams]);
 
 
   const { data: userPets, isLoading, isError, refetch } = useQuery({
@@ -253,9 +262,6 @@ const DashboardPage: React.FC = () => {
       mutationFn: toggolFavouritePet,
       onSuccess: async (pet: any) => {
         await queryClient.invalidateQueries({ queryKey: ['getUserFavouritePets'] });
-        // toast({
-        //   title: 'Pet saved successfully',
-        // });
       },
       onError: (err: any) => {
         toast({
@@ -326,8 +332,10 @@ const DashboardPage: React.FC = () => {
   function timeAgo(date: string): string {
     return formatDistanceToNow(new Date(date), { addSuffix: true });
   }
-
-  console.log('userChats', userChats)
+  const handleTabClick = (tab: string) => {
+    setActiveTab(tab);
+    router.push(`/dashboard?tab=${tab}`);
+  };
 
   return (
     <Layout>
@@ -370,7 +378,7 @@ const DashboardPage: React.FC = () => {
                   <Button
                     variant={activeTab === 'my-pets' ? 'secondary' : 'ghost'}
                     className="w-full justify-start"
-                    onClick={() => setActiveTab('my-pets')}
+                    onClick={() => handleTabClick('my-pets')}
                   >
                     <PawPrint className="h-4 w-4 mr-2" />
                     My Pets
@@ -378,16 +386,16 @@ const DashboardPage: React.FC = () => {
                   <Button
                     variant={activeTab === 'requests' ? 'secondary' : 'ghost'}
                     className="w-full justify-start"
-                    onClick={() => setActiveTab('requests')}
+                    onClick={() => handleTabClick('requests')}
                   >
                     <Inbox className="h-4 w-4 mr-2" />
                     Requests
-                    <Badge className="ml-auto" variant="secondary">{petReceivedReequests?.length || 0}</Badge>
+                    <Badge className="ml-auto" variant="secondary">{petReceivedReequests?.length || ''}</Badge>
                   </Button>
                   <Button
                     variant={activeTab === 'favorites' ? 'secondary' : 'ghost'}
                     className="w-full justify-start"
-                    onClick={() => setActiveTab('favorites')}
+                    onClick={() => handleTabClick('favorites')}
                   >
                     <Heart className="h-4 w-4 mr-2" />
                     Favorites
@@ -395,16 +403,16 @@ const DashboardPage: React.FC = () => {
                   <Button
                     variant={activeTab === 'messages' ? 'secondary' : 'ghost'}
                     className="w-full justify-start"
-                    onClick={() => setActiveTab('messages')}
+                    onClick={() => handleTabClick('messages')}
                   >
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Messages
-                    <Badge className="ml-auto" variant="secondary">5</Badge>
+                    {/* <Badge className="ml-auto" variant="secondary">5</Badge> */}
                   </Button>
                   <Button
                     variant={activeTab === 'settings' ? 'secondary' : 'ghost'}
                     className="w-full justify-start"
-                    onClick={() => setActiveTab('settings')}
+                    onClick={() => handleTabClick('settings')}
                   >
                     <Settings className="h-4 w-4 mr-2" />
                     Settings
@@ -492,7 +500,7 @@ const DashboardPage: React.FC = () => {
                             )}
                           </div>
                           <div className="text-sm text-muted-foreground mb-4">
-                            {pet.breed} · {pet.age} {pet.age === 1 ? 'year' : 'years'} · {pet.gender}
+                            {pet.breed} · {pet.age} {pet.age === 1 ? 'month' : 'months'} · {pet.gender}
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-muted-foreground">
@@ -500,7 +508,7 @@ const DashboardPage: React.FC = () => {
                             </span>
                             {pet.purpose === 'sell' && pet.price && (
                               <span className="font-semibold text-primary">
-                                ${pet.price.toFixed(2)}
+                                ₹{pet.price.toFixed(2)}
                               </span>
                             )}
                           </div>
@@ -810,7 +818,7 @@ const DashboardPage: React.FC = () => {
                 {favoritePets && favoritePets.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {favoritePets.map((pet: any) => (
-                      <Card key={pet?.pet._id} className="overflow-hidden">
+                      <Card key={pet?._id} className="overflow-hidden">
                         <div className="aspect-video relative">
                           <img
                             src={pet?.pet.images[0]}
@@ -820,7 +828,7 @@ const DashboardPage: React.FC = () => {
                           <Button
                             variant="secondary"
                             size="icon"
-                            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 text-foreground hover:bg-white backdrop-blur"
+                            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 text-foreground hover:bg-white backdrop-blur "
                             onClick={() => {
 
                               handleToggol(pet.pet._id)
@@ -830,7 +838,7 @@ const DashboardPage: React.FC = () => {
                               });
                             }}
                           >
-                            <Heart className="h-4 w-4 fill-current" />
+                            <Heart className="h-4 w-4 fill-[red] stroke-none" />
                           </Button>
                         </div>
                         <CardContent className="p-4">
@@ -853,7 +861,7 @@ const DashboardPage: React.FC = () => {
                             )}
                           </div>
                           <div className="text-sm text-muted-foreground mb-4">
-                            {pet?.pet.breed} · {pet?.pet.age} {pet?.pet.age === 1 ? 'year' : 'years'} · {pet?.pet.gender}
+                            {pet?.pet.breed} · {pet?.pet.age} {pet?.pet.age === 1 ? 'month' : 'months'} · {pet?.pet.gender}
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-muted-foreground">
@@ -861,7 +869,7 @@ const DashboardPage: React.FC = () => {
                             </span>
                             {pet?.pet.purpose === 'sell' && pet?.pet.price && (
                               <span className="font-semibold text-primary">
-                                ${pet?.pet.price.toFixed(2)}
+                                 ₹{pet?.pet.price.toFixed(2)}
                               </span>
                             )}
                           </div>

@@ -45,7 +45,8 @@ import { toast } from '@/hooks/use-toast';
 import { User, UserCredentials, RegisterData } from '@/types/user';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { loginService, signupService, getCurrentUserService } from '@/services/authApi';
-import { useAuth } from '@/contexts/AuthContext';
+ 
+import { useUser } from '@/hooks/useUser';
 
 // Login form schema
 const loginSchema = z.object({
@@ -80,14 +81,14 @@ const LoginPage: React.FC = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [tabValue, setTabValue] = useState('login')
-  const { login, user, loading } = useAuth();
+  const { user, isLoading, isError,isLoggedIn,login } = useUser();
 
   const router = useRouter()
   useEffect(() => {
-    if (!loading && user) {
+    if (!isLoading && user) {
       router.push('/')
     }
-  }, [loading, user])
+  }, [isLoading, user])
   // Login form
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -183,27 +184,7 @@ const LoginPage: React.FC = () => {
     setShowConfirmPassword(!showConfirmPassword);
   };
 
-  // Set test credentials
-  const setTestCredentials = (type: 'individual' | 'pet_shop' | 'shelter') => {
-    let email = "";
 
-    switch (type) {
-      case 'individual':
-        email = "user@example.com";
-        break;
-      case 'shelter':
-        email = "shelter@example.com";
-        break;
-      case 'pet_shop':
-        email = "petshop@example.com";
-        break;
-      default:
-        email = "user@example.com";
-    }
-
-    loginForm.setValue("email", email);
-    loginForm.setValue("password", "password123");
-  };
 
 
   return (
@@ -297,38 +278,6 @@ const LoginPage: React.FC = () => {
                     </form>
                   </Form>
 
-                  {/* <div className="mt-4">
-                    <div className="text-sm text-muted-foreground mb-2">Test Accounts:</div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setTestCredentials('individual')}
-                        className="text-xs"
-                      >
-                        User
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setTestCredentials('pet_shop')}
-                        className="text-xs"
-                      >
-                        Pet Shop
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setTestCredentials('shelter')}
-                        className="text-xs"
-                      >
-                        Shelter
-                      </Button>
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Click any option to fill in test credentials
-                    </div>
-                  </div> */}
 
                   <div className="mt-6">
                     <div className="relative">

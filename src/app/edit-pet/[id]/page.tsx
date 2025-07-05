@@ -26,7 +26,7 @@ import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { getUserSinglePet, updatePet } from '@/services/petServices';
 import { getAddresses, createAddress, updateAddressById } from '@/services/authApi';
 import Cookies from 'js-cookie';
-import { useAuth } from '@/contexts/AuthContext';
+ 
 
 interface Address {
   street: string;
@@ -39,7 +39,6 @@ interface Address {
 const EditPetPage: React.FC = () => {
   const { id } = useParams();
   const router = useRouter();
-  const { user } = useAuth();
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [addressMode, setAddressMode] = useState<'existing' | 'new'>('existing');
   const [petData, setPetData] = useState<any>(null);
@@ -296,7 +295,7 @@ const EditPetPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="age">Age (years)</Label>
+                  <Label htmlFor="age">Age (months)</Label>
                   <Input
                     id="age"
                     type="number"
@@ -304,7 +303,7 @@ const EditPetPage: React.FC = () => {
                     max="30"
                     value={petData.age}
                     onChange={(e) => handleInputChange('age', parseInt(e.target.value))}
-                    placeholder="Age in years"
+                    placeholder="Age in months"
                     required
                   />
                 </div>
@@ -386,7 +385,7 @@ const EditPetPage: React.FC = () => {
 
               {petData.purpose === 'sell' && (
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price ($)</Label>
+                  <Label htmlFor="price">Price (₹)</Label>
                   <Input
                     id="price"
                     type="number"

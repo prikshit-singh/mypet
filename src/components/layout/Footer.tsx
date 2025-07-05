@@ -26,7 +26,7 @@ const Footer: React.FC = () => {
                 <path d="M8 11.973c2 1 6 1 8 0" />
                 <path d="M12 2C6.5 2 2 6.5 2 12a10 10 0 0 0 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
               </svg>
-              <span className="text-xl font-bold text-purple-600">PawConnect</span>
+              <span className="text-xl font-bold text-purple-600"> ThePetWala</span>
             </div>
             <p className="text-sm text-muted-foreground">
               Connecting pets with loving homes. Adoption, sales, and breeding services all in one place.
@@ -132,9 +132,9 @@ const Footer: React.FC = () => {
                 </a>
               </li>
               <li>
-                <a href="mailto:info@pawconnect.com" className="text-sm text-muted-foreground hover:text-primary flex items-center gap-2">
+                <a href="mailto:info@ ThePetWala.com" className="text-sm text-muted-foreground hover:text-primary flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  info@pawconnect.com
+                  info@ ThePetWala.com
                 </a>
               </li>
             </ul>
@@ -142,7 +142,7 @@ const Footer: React.FC = () => {
         </div>
         <div className="mt-8 border-t pt-8 flex flex-col sm:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} PawConnect. All rights reserved.
+            &copy; {new Date().getFullYear()}  ThePetWala. All rights reserved.
           </p>
           <div className="mt-4 sm:mt-0 flex space-x-6">
             <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary">

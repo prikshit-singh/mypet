@@ -57,7 +57,7 @@ const quickFilters = [
 
 const testimonials = [
   {
-    quote: "PawConnect helped me find my perfect furry companion. The process was so easy!",
+    quote: " ThePetWala helped me find my perfect furry companion. The process was so easy!",
     author: "Sarah Johnson",
     image: "https://i.pravatar.cc/150?img=10"
   },
@@ -67,7 +67,7 @@ const testimonials = [
     image: "https://i.pravatar.cc/150?img=11"
   },
   {
-    quote: "Our shelter has successfully placed dozens of animals in loving homes thanks to PawConnect.",
+    quote: "Our shelter has successfully placed dozens of animals in loving homes thanks to  ThePetWala.",
     author: "Happy Paws Shelter",
     image: "https://i.pravatar.cc/150?img=12"
   }
@@ -233,7 +233,7 @@ const Home: React.FC =() => {
         <div className="container text-center">
           <h2 className="text-2xl md:text-3xl font-bold mb-4 fade-in-up">Ready to Find Your Perfect Pet?</h2>
           <p className="max-w-2xl mx-auto mb-8 fade-in-up delay-200">
-            Whether you're looking to adopt, buy, sell, or breed, PawConnect has everything you need to connect with pets and pet lovers.
+            Whether you're looking to adopt, buy, sell, or breed,  ThePetWala has everything you need to connect with pets and pet lovers.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center fade-in-up delay-400">
             <Button asChild size="lg" variant="secondary">

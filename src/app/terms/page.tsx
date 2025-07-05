@@ -16,19 +16,19 @@ const TermsPage: React.FC = () => {
             </p>
             
             <p className="mb-6">
-              Welcome to PawConnect. Please read these Terms of Service ("Terms") carefully as they contain important information about your legal rights, remedies, and obligations. By accessing or using the PawConnect platform, you agree to comply with and be bound by these Terms.
+              Welcome to  ThePetWala. Please read these Terms of Service ("Terms") carefully as they contain important information about your legal rights, remedies, and obligations. By accessing or using the  ThePetWala platform, you agree to comply with and be bound by these Terms.
             </p>
             
             <Separator className="my-8" />
             
             <h2 className="text-2xl font-semibold mb-4 text-foreground">1. Acceptance of Terms</h2>
             <p className="mb-6">
-              By accessing or using PawConnect, you agree to be bound by these Terms and our Privacy Policy. If you do not agree to these Terms, you may not access or use the PawConnect platform.
+              By accessing or using  ThePetWala, you agree to be bound by these Terms and our Privacy Policy. If you do not agree to these Terms, you may not access or use the  ThePetWala platform.
             </p>
             
             <h2 className="text-2xl font-semibold mb-4 text-foreground">2. Description of Service</h2>
             <p className="mb-6">
-              PawConnect provides an online platform that connects pet owners, breeders, shelters, and individuals interested in adopting, buying, selling, or breeding pets. Our services include but are not limited to listing pets for adoption or sale, facilitating communication between parties, and providing educational content about pet care.
+               ThePetWala provides an online platform that connects pet owners, breeders, shelters, and individuals interested in adopting, buying, selling, or breeding pets. Our services include but are not limited to listing pets for adoption or sale, facilitating communication between parties, and providing educational content about pet care.
             </p>
             
             <h2 className="text-2xl font-semibold mb-4 text-foreground">3. User Accounts</h2>
@@ -38,7 +38,7 @@ const TermsPage: React.FC = () => {
             
             <h2 className="text-2xl font-semibold mb-4 text-foreground">4. User Conduct</h2>
             <p className="mb-6">
-              You agree not to use the PawConnect platform to:
+              You agree not to use the  ThePetWala platform to:
             </p>
             <ul className="list-disc pl-6 mb-6">
               <li>Violate any applicable law, regulation, or these Terms</li>
@@ -64,12 +64,12 @@ const TermsPage: React.FC = () => {
             
             <h2 className="text-2xl font-semibold mb-4 text-foreground">6. Limitation of Liability</h2>
             <p className="mb-6">
-              PawConnect is not responsible for the actions, content, information, or data of third parties, and you release us from any claims and damages arising out of or in any way connected with any dispute you may have with other users of the platform or third parties.
+               ThePetWala is not responsible for the actions, content, information, or data of third parties, and you release us from any claims and damages arising out of or in any way connected with any dispute you may have with other users of the platform or third parties.
             </p>
             
             <h2 className="text-2xl font-semibold mb-4 text-foreground">7. Disclaimer of Warranties</h2>
             <p className="mb-6">
-              The PawConnect platform is provided "as is" without any warranty of any kind. We disclaim all warranties, whether express or implied, including the implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
+              The  ThePetWala platform is provided "as is" without any warranty of any kind. We disclaim all warranties, whether express or implied, including the implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
             </p>
             
             <h2 className="text-2xl font-semibold mb-4 text-foreground">8. Changes to Terms</h2>
@@ -84,7 +84,7 @@ const TermsPage: React.FC = () => {
             
             <h2 className="text-2xl font-semibold mb-4 text-foreground">10. Contact Information</h2>
             <p className="mb-6">
-              If you have any questions about these Terms, please contact us at legal@pawconnect.com.
+              If you have any questions about these Terms, please contact us at legal@ ThePetWala.com.
             </p>
           </div>
         </div>

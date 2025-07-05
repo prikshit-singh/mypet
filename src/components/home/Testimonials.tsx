@@ -2,7 +2,7 @@
 
 const testimonials = [
   {
-    quote: "PawConnect helped me find my perfect furry companion.",
+    quote: " ThePetWala helped me find my perfect furry companion.",
     author: "Sarah Johnson",
     image: "https://i.pravatar.cc/150?img=10"
   },

@@ -384,7 +384,7 @@ const PetsPage: React.FC = () => {
         </AccordionItem>
 
         <AccordionItem value="age">
-          <AccordionTrigger>Age (years)</AccordionTrigger>
+          <AccordionTrigger>Age (months)</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-4">
               <div className="flex justify-between">
@@ -403,7 +403,7 @@ const PetsPage: React.FC = () => {
         </AccordionItem>
 
         <AccordionItem value="price">
-          <AccordionTrigger>Price ($)</AccordionTrigger>
+          <AccordionTrigger>Price (₹)</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-4">
               <div className="flex justify-between">
@@ -547,7 +547,7 @@ const PetsPage: React.FC = () => {
 
               {(filters.ageRange[0] !== 0 || filters.ageRange[1] !== 15) && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Age: {filters.ageRange[0]}-{filters.ageRange[1]} years
+                  Age: {filters.ageRange[0]}-{filters.ageRange[1]} months
                   <button onClick={() => handleRangeFilter('ageRange', [0, 15])}>
                     <X className="h-3 w-3" />
                   </button>

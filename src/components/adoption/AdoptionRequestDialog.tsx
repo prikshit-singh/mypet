@@ -19,22 +19,23 @@ import { Pet } from '@/types/pet';
 import { useRouter } from 'next/navigation';
 import { sendRequest } from '@/services/petServices';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/AuthContext';
-
+ 
+import { useUser } from '@/hooks/useUser';
 
 interface AdoptionRequestDialogProps {
   pet: Pet;
   buttonText?: string;
+  isDisabled?:boolean
   title?: string;
   placeholder?: string;
   onRequestSent?: () => void;
 }
 
-const AdoptionRequestDialog: React.FC<AdoptionRequestDialogProps> = ({ pet, buttonText, title, placeholder, onRequestSent }) => {
+const AdoptionRequestDialog: React.FC<AdoptionRequestDialogProps> = ({ pet, buttonText,isDisabled, title, placeholder, onRequestSent }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [isOpen, setIsOpen] = useState(false);
-  const { user, isLoggedIn, logout } = useAuth();
+  const { user, isLoggedIn, logout } = useUser();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -94,15 +95,7 @@ const AdoptionRequestDialog: React.FC<AdoptionRequestDialogProps> = ({ pet, butt
       const type = pet.purpose === 'sell' ? 'buy' : pet.purpose
 
       SendRequestMutation.mutate({pet:pet._id,message,type})
-
-      // toast({
-      //   title: "Request sent",
-      //   description: "Your adoption request has been sent to the pet owner",
-      // });
-
-      // setIsOpen(false);
-      // setMessage('');
-      // if (onRequestSent) onRequestSent();
+     
     } catch (error) {
       toast({
         title: "Error",
@@ -117,7 +110,7 @@ const AdoptionRequestDialog: React.FC<AdoptionRequestDialogProps> = ({ pet, butt
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="flex-1">
+        <Button className="flex-1" disabled={isDisabled}>
           {/* <Heart className="h-4 w-4" /> */}
           {buttonText}
         </Button>

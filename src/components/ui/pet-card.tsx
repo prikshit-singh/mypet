@@ -102,7 +102,7 @@ export function PetCard({ pet, className ,isFavourite}: PetCardProps) {
           <span>{typeof pet.address === 'object' && pet.address !== null ? pet.address.city : 'No city'}</span>
           <span className="mx-2">•</span>
           <Calendar className="h-3.5 w-3.5 mr-1" />
-          <span>{pet.age} {pet.age === 1 ? 'year' : 'years'}</span>
+          <span>{pet.age} {pet.age === 1 ? 'month' : 'months'}</span>
         </div>
         <div className="flex flex-wrap gap-2 mb-3">
           <Badge variant="secondary">{pet.type}</Badge>
@@ -116,12 +116,12 @@ export function PetCard({ pet, className ,isFavourite}: PetCardProps) {
           </div>
         ) : pet.purpose === 'sell' ? (
           <div className="font-bold text-lg mb-3 text-primary">
-            ${pet.price?.toFixed(2)}
+            ₹{pet.price?.toFixed(2)}
           </div>
         ) : (
           <div className="font-bold text-lg mb-3 text-purple-600">
             {pet.gender === 'Male' ? (
-              <>Stud Fee: ${pet.price?.toFixed(2)}</>
+              <>Stud Fee: ₹{pet.price?.toFixed(2)}</>
             ) : (
               <>Breeding</>
             )}

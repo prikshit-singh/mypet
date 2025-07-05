@@ -84,8 +84,8 @@ const ContactPage: React.FC = () => {
               </div>
               <h3 className="text-lg font-semibold mb-2">Email Us</h3>
               <p className="text-muted-foreground">
-                General Inquiries: info@pawconnect.com<br />
-                Support: support@pawconnect.com
+                General Inquiries: info@ ThePetWala.com<br />
+                Support: support@ ThePetWala.com
               </p>
             </div>
           </div>

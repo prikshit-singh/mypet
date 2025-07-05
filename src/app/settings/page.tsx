@@ -38,8 +38,9 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar";
 import Layout from '@/components/layout/Layout';
-import { useAuth } from '@/contexts/AuthContext';
+ 
 import { toast } from '@/hooks/use-toast';
+import { useUser } from '@/hooks/useUser';
 
 // Profile form schema
 const profileSchema = z.object({
@@ -60,7 +61,7 @@ const notificationSchema = z.object({
 });
 
 const SettingsPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
  const router = useRouter()
   // Profile form
   const profileForm = useForm<z.infer<typeof profileSchema>>({

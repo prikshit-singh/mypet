@@ -50,11 +50,12 @@ import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { getSinglePets, toggolFavouritePet, ratePetOwner } from '@/services/petServices';
 import AdoptionRequestDialog from '@/components/adoption/AdoptionRequestDialog';
 import { useChatSocket } from '@/hooks/useChatSocket';
-import { useAuth } from '@/contexts/AuthContext';
+ 
+import { useUser } from '@/hooks/useUser';
 
 const PetDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { user: currentUser } = useAuth();
+  const { user:currentUser } = useUser();
   const router = useRouter()
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<'adopt' | 'buy' | 'breed'>('adopt');
@@ -141,54 +142,34 @@ const PetDetailsPage: React.FC = () => {
   const renderActionButtons = () => {
     if (pet.purpose === 'adopt') {
       return (
-        // <Button 
-        //   className="flex-1"
-        //   onClick={() => handleAction('adopt')}
-        // >
-        //   Request Adoption
-        // </Button>
-
         <AdoptionRequestDialog
           pet={pet}
           buttonText="Request Adoption"
           title={`Request to Adopt ${pet.name}.`}
           placeholder={`Hi, I'm interested in adopting ${pet.name}...`}
-
+          isDisabled={currentUser?._id === pet.owner._id}
         />
       );
     } else if (pet.purpose === 'sell') {
       return (
-        // <Button 
-        //   className="flex-1"
-        //   onClick={() => handleAction('buy')}
-        // >
-        //   {`Buy Now - $${parseFloat(pet.price)}`}
-        // </Button>
-
         <AdoptionRequestDialog
           pet={pet}
-          buttonText={`Buy Now - $${parseFloat(pet.price)}`}
+          buttonText={`Buy Now - ₹${parseFloat(pet.price)}`}
           title={`Request to Buy ${pet.name}.`}
           placeholder={`Hi, I'm interested in buying ${pet.name}...`}
+          isDisabled={currentUser?._id === pet.owner._id}
+
 
         />
       );
     } else {
       return (
-        // <Button 
-        //   className="flex-1"
-        //   onClick={() => handleAction('breed')}
-        // >
-        //   Send Breeding Request
-        // </Button>
-
         <AdoptionRequestDialog
           pet={pet}
           buttonText={`Send Breeding Request`}
           title={`Request to Breed ${pet.name}.`}
           placeholder={`Hi, I'm interested in breeding with ${pet.name}...`}
-
-
+          isDisabled={currentUser?._id === pet.owner._id}
         />
       );
     }
@@ -237,7 +218,7 @@ const PetDetailsPage: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-2 text-sm">
                       <span className="text-muted-foreground">Age</span>
-                      <span>{pet.age} {pet.age === 1 ? 'year' : 'years'}</span>
+                      <span>{pet.age} {pet.age === 1 ? 'month' : 'months'}</span>
                     </div>
                     <div className="grid grid-cols-2 text-sm">
                       <span className="text-muted-foreground">Gender</span>
@@ -306,7 +287,19 @@ const PetDetailsPage: React.FC = () => {
                       <span className="capitalize">{pet.owner.role}</span>
                       <button
                         className="flex items-center hover:text-primary transition-colors"
-                        onClick={() => setIsRatingModalOpen(true)}
+                        onClick={() => {
+                          if (!currentUser) {
+                            toast({
+                              title: "Login required",
+                              description: "You need to be logged in to submit request",
+                              variant: "destructive",
+                            });
+                            router.push(`/login`);
+                            return
+                          }
+                          setIsRatingModalOpen(true)
+                        }}
+                        disabled={currentUser?._id === pet.owner._id}
                       >
                         <Star className="h-4 w-4 text-amber-500 mr-1 fill-amber-500" />
                         {pet.owner.averageRating.toFixed(1)}
@@ -319,6 +312,7 @@ const PetDetailsPage: React.FC = () => {
                 <div className="space-y-3">
                   <Button
                     className="w-full"
+
                     onClick={() => {
                       const actionMap = {
                         'adopt': 'adopt',
@@ -327,6 +321,7 @@ const PetDetailsPage: React.FC = () => {
                       } as const;
                       handleAction(actionMap[pet.purpose as 'breed' | 'sell' | 'adopt']);
                     }}
+                    disabled={currentUser?._id === pet.owner._id}
                   >
                     <MessageCircle className="mr-2 h-4 w-4" />
                     Contact Owner
@@ -335,7 +330,19 @@ const PetDetailsPage: React.FC = () => {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => setIsRatingModalOpen(true)}
+                    onClick={() => {
+                      if (!currentUser) {
+                        toast({
+                          title: "Login required",
+                          description: "You need to be logged in to submit request",
+                          variant: "destructive",
+                        });
+                        router.push(`/login`);
+                        return
+                      }
+                      setIsRatingModalOpen(true)
+                    }}
+                    disabled={currentUser?._id === pet.owner._id}
                   >
                     <Star className="mr-2 h-4 w-4" />
                     Rate This {pet.owner.role === 'individual' ? 'Owner' : pet.owner.role === 'shelter' ? 'Shelter' : 'Pet Shop'}
@@ -377,11 +384,11 @@ const PetDetailsPage: React.FC = () => {
                       By making a purchase inquiry, you understand:
                     </p>
                     <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                      <li>The listed price is {pet.price ? `$${parseFloat(pet.price)}` : 'to be discussed with the seller'}</li>
+                      <li>The listed price is {pet.price ? `₹${parseFloat(pet.price)}` : 'to be discussed with the seller'}</li>
                       <li>You may need to provide proof of ability to care for the pet</li>
                       <li>The seller may have additional requirements before finalizing the sale</li>
                       <li>We recommend meeting the pet in person before completing the purchase</li>
-                      <li>PawConnect is not responsible for transactions between users</li>
+                      <li> ThePetWala is not responsible for transactions between users</li>
                     </ul>
                     <div className="flex items-start p-4 bg-amber-50 dark:bg-amber-950/50 rounded-lg text-amber-800 dark:text-amber-200">
                       <Info className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
@@ -402,7 +409,7 @@ const PetDetailsPage: React.FC = () => {
                       <li>You may need to provide information about your pet's health, lineage, and temperament</li>
                       <li>Breeding fees and arrangements will be discussed directly with the owner</li>
                       <li>Responsible breeding practices must be followed</li>
-                      <li>PawConnect is not responsible for breeding arrangements between users</li>
+                      <li> ThePetWala is not responsible for breeding arrangements between users</li>
                     </ul>
                     <div className="flex items-start p-4 bg-amber-50 dark:bg-amber-950/50 rounded-lg text-amber-800 dark:text-amber-200">
                       <Info className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
@@ -434,8 +441,6 @@ const PetDetailsPage: React.FC = () => {
                       size="icon"
                       onClick={() => handleAddToFavorites(pet._id)}
                     >
-
-
                       {pet.isFavourite ? <Heart className="h-4 w-4 fill-red-500 text-white  bg-red" /> : <Heart className="h-4 w-4 " />}
                     </Button>
                   </div>
@@ -445,7 +450,7 @@ const PetDetailsPage: React.FC = () => {
                   <span>{pet.city}</span>
                   <span className="mx-2">•</span>
                   <Calendar className="h-3.5 w-3.5 mr-1" />
-                  <span>{pet.age} {pet.age === 1 ? 'year' : 'years'}</span>
+                  <span>{pet.age} {pet.age === 1 ? 'month' : 'months'}</span>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {pet.purpose === 'adopt' && (
@@ -478,7 +483,20 @@ const PetDetailsPage: React.FC = () => {
                 <Button
                   variant="ghost"
                   className="h-auto p-0 hover:bg-transparent flex items-center gap-1 text-amber-500"
-                  onClick={() => setIsRatingModalOpen(true)}
+                  onClick={() => {
+                    if (!currentUser) {
+                      toast({
+                        title: "Login required",
+                        description: "You need to be logged in to submit request",
+                        variant: "destructive",
+                      });
+                      router.push(`/login`);
+                      return
+                    }
+                    setIsRatingModalOpen(true)
+                  }}
+                  disabled={currentUser?._id === pet.owner._id}
+
                 >
                   <div className="flex">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -496,7 +514,7 @@ const PetDetailsPage: React.FC = () => {
 
               {pet.purpose === 'sell' && (
                 <div className="mb-6">
-                  <h2 className="font-bold text-2xl text-primary">${pet.price}</h2>
+                  <h2 className="font-bold text-2xl text-primary">₹{pet.price}</h2>
                 </div>
               )}
 
@@ -517,7 +535,20 @@ const PetDetailsPage: React.FC = () => {
                     </div>
                     <button
                       className="flex items-center text-xs text-muted-foreground hover:text-primary transition-colors"
-                      onClick={() => setIsRatingModalOpen(true)}
+                      onClick={() => {
+                        if (!currentUser) {
+                          toast({
+                            title: "Login required",
+                            description: "You need to be logged in to submit request",
+                            variant: "destructive",
+                          });
+                          router.push(`/login`);
+                          return
+                        }
+                        setIsRatingModalOpen(true)
+                      }}
+                      disabled={currentUser?._id === pet.owner._id}
+
                     >
                       <Star className="h-3 w-3 text-amber-500 mr-1 fill-amber-500" />
                       <span>{pet.owner.averageRating.toFixed(1)}</span>
@@ -532,7 +563,20 @@ const PetDetailsPage: React.FC = () => {
                 {renderActionButtons()}
                 <Button
                   variant="outline"
-                  onClick={() => router.push(`/chat/${pet.id}`)}
+                  onClick={() => {
+                    if (!currentUser) {
+                      toast({
+                        title: "Login required",
+                        description: "You need to be logged in to submit request",
+                        variant: "destructive",
+                      });
+                      router.push(`/login`);
+                      return
+                    }
+                    router.push(`/chat/${pet.id}`)
+                  }}
+                  disabled={currentUser?._id === pet.owner._id}
+
                 >
                   <MessageCircle className="h-4 w-4" />
                   <span className="sr-only">Message</span>
@@ -580,7 +624,7 @@ const CahtInquiry = ({ isContactDialogOpen, setIsContactDialogOpen, pet, actionT
   const [text, setText] = useState('');
 
   const handleSubmitRequest = () => {
-    
+
     sendMessage({
       senderId: userId,
       receiverId: pet.owner._id,

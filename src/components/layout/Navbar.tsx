@@ -1,4 +1,4 @@
-
+"use client"
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import {
   LogOut, User as UserIcon, Plus, Settings
 } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme';
-import { useAuth } from '@/contexts/AuthContext';
+ 
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,11 +23,12 @@ import {
 } from "@/components/ui/avatar";
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
+import { useUser } from '@/hooks/useUser';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const { user, isLoggedIn, logout } = useAuth();
+  const { user, isLoading, isError,isLoggedIn,logout } = useUser();
   const router = useRouter();
 
   const handleLogout = () => {
@@ -49,7 +50,7 @@ const Navbar: React.FC = () => {
 
   const handleFavorites = () => {
     if (isLoggedIn) {
-      router.push('/dashboard');
+      router.push('/dashboard?tab=favorites');
       toast({
         title: "Favorites",
         description: "You can find your favorite pets in your dashboard.",
@@ -67,7 +68,11 @@ const Navbar: React.FC = () => {
     if (isLoggedIn) {
       // In a real app, we'd router.push to a chat list page
       // For now, we'll direct to the first pet chat as an example
-      router.push('/chat/pet1');
+       router.push('/dashboard?tab=messages');
+       toast({
+        title: "Messages",
+        description: "You can find your messages in your dashboard.",
+      });
     } else {
       router.push('/login');
       toast({
@@ -76,6 +81,7 @@ const Navbar: React.FC = () => {
       });
     }
   };
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -96,7 +102,7 @@ const Navbar: React.FC = () => {
             <path d="M8 11.973c2 1 6 1 8 0" />
             <path d="M12 2C6.5 2 2 6.5 2 12a10 10 0 0 0 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
           </svg>
-          <span className="text-xl font-bold text-purple-600">PawConnect</span>
+          <span className="text-xl font-bold text-purple-600">ThePetWala</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -143,11 +149,11 @@ const Navbar: React.FC = () => {
                   <UserIcon className="mr-2 h-4 w-4" />
                   <span>Dashboard</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/dashboard/pets/new')}>
+                <DropdownMenuItem onClick={() => router.push('/add-pet')}>
                   <Plus className="mr-2 h-4 w-4" />
                   <span>Add Pet</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/settings')}>
+                <DropdownMenuItem onClick={() => router.push('/dashboard?tab=settings')}>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </DropdownMenuItem>

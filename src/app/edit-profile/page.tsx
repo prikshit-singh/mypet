@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+ 
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,7 +23,7 @@ import { useRouter } from 'next/navigation';
 
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { createAddress, getAddresses, updateAddressById, updateCurrentUser, updateCurrentUserProfileAvatar } from '@/services/authApi';
-
+import { useUser } from '@/hooks/useUser';
 interface Address {
   street: string;
   city: string;
@@ -33,7 +33,7 @@ interface Address {
 }
 
 const EditProfilePage = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   // Initialize with some default addresses

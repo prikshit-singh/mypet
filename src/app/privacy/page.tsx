@@ -16,7 +16,7 @@ const PrivacyPage: React.FC = () => {
             </p>
             
             <p className="mb-6">
-              This Privacy Policy describes how PawConnect ("we", "our", or "us") collects, uses, and shares your personal information when you use our website, mobile application, or services (collectively, the "Services").
+              This Privacy Policy describes how  ThePetWala ("we", "our", or "us") collects, uses, and shares your personal information when you use our website, mobile application, or services (collectively, the "Services").
             </p>
             
             <Separator className="my-8" />
@@ -112,7 +112,7 @@ const PrivacyPage: React.FC = () => {
             
             <h2 className="text-2xl font-semibold mb-4 text-foreground">8. Contact Us</h2>
             <p className="mb-6">
-              If you have any questions about this Privacy Policy, please contact us at privacy@pawconnect.com.
+              If you have any questions about this Privacy Policy, please contact us at privacy@ ThePetWala.com.
             </p>
           </div>
         </div>

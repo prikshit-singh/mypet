@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Send, ArrowLeft, Phone, Video, MoreVertical } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+ 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { getSingleChat } from '@/services/chatServices';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useChatSocket } from '@/hooks/useChatSocket';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/hooks/useUser';
 
 interface Message {
   _id: string;
@@ -23,7 +24,7 @@ interface Message {
 const ChatPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { user } = useAuth();
+ const { user } = useUser();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const queryClient = useQueryClient();
