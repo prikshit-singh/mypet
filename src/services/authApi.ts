@@ -3,7 +3,7 @@ import {   User } from '@/types/user';
 import { signupPayload ,loginPayload} from '@/types/apiPayloadTypes';
 import { RegisterData } from '@/types/user';
 import Cookies from 'js-cookie';
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'https://gitgurus.com/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'https://thepetwala.com/api';
 // const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 /**
  * Register a new user

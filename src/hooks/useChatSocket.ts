@@ -22,7 +22,7 @@ interface ReceiveMessagePayload {
 }
 
 // const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000';
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://gitgurus.com';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://thepetwala.com';
 
 export const useChatSocket = (userId: string) => {
   const socketRef = useRef<Socket | null>(null);
