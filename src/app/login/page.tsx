@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Eye, EyeOff, Facebook, Github, Mail, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import GoogleAuthButton from '@/components/googleLogin/GoogleAuthButton';
 import {
   Form,
   FormControl,
@@ -296,10 +297,11 @@ const LoginPage: React.FC = () => {
                         <Facebook className="mr-2 h-4 w-4" />
                         Facebook
                       </Button>
-                      <Button variant="outline" className="w-full">
+                      {/* <Button variant="outline" className="w-full">
                         <Mail className="mr-2 h-4 w-4" />
                         Google
-                      </Button>
+                      </Button> */}
+                   <GoogleAuthButton/>
                     </div>
                   </div>
                 </CardContent>
