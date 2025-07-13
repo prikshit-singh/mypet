@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import { useScrollAnimation } from '@/hooks/use-scroll-animation';
-import { usePathname } from 'next/navigation'; 
+import { usePathname } from 'next/navigation';
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -15,10 +15,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   useEffect(() => {
     // Initialize animations when layout mounts
     initScrollAnimations();
-    
+
     // Scroll to top when layout mounts (page change)
     // window.scrollTo(0, 0);
-    
+
     // Reinitialize animations when children change (route changes)
     return () => {
       // Small timeout to ensure DOM is ready for animations on route change

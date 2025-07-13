@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://thepetwala.com/og-image.jpg", // Replace with your actual OG image
+        url: "https://thepetwala.com/og-logo.png", // Replace with your actual OG image
         width: 1200,
         height: 630,
         alt: "The Pet Wala – Pet Marketplace",
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     title: "The Pet Wala – Buy, Sell, Adopt & Breed Pets",
     description:
       "Join The Pet Wala to buy, sell, adopt, or breed pets and explore premium pet accessories. The only platform you need for your pets.",
-    images: ["https://thepetwala.com/twitter-image.jpg"], // Replace with your actual Twitter image
+    images: ["https://thepetwala.com/og-logo.png"], // Replace with your actual Twitter image
   },
   metadataBase: new URL("https://thepetwala.com"), // Optional but recommended
 };
