@@ -7,6 +7,7 @@ import {
   LogOut, User as UserIcon, Plus, Settings
 } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme';
+import Image from 'next/image';
  
 import {
   DropdownMenu,
@@ -88,7 +89,8 @@ const Navbar: React.FC = () => {
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <svg
+        <Image src="/logo.png" height={200} width={200} alt='the pet wala' />
+          {/* <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
             fill="none"
@@ -102,7 +104,7 @@ const Navbar: React.FC = () => {
             <path d="M8 11.973c2 1 6 1 8 0" />
             <path d="M12 2C6.5 2 2 6.5 2 12a10 10 0 0 0 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
           </svg>
-          <span className="text-xl font-bold text-purple-600">ThePetWala</span>
+          <span className="text-xl font-bold text-purple-600">ThePetWala</span> */}
         </Link>
 
         {/* Desktop Navigation */}
